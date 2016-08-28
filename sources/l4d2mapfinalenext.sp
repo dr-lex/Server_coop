@@ -5,23 +5,6 @@
 #endif
 #pragma newdecls required
 
-#define CITY17L4D2_ENABLED true
-#define DIESCRAPER35_ENABLED true
-#define WARCELONA_ENABLED true
-#define DEADDESTINATION_ENABLED true
-#define GASFEVER_ENABLED false
-#define FRFLDFLLN_ENABLED false
-#define FALLINDEATH_ENABLED true
-#define URBANFLIGHT_ENABLED true
-#define RED_ENABLED true
-#define PRECINCT84_ENABLED true
-#define DEADBEATESCAPE_ENABLED false
-#define FATALFREIGHT_ENABLED true
-#define DEATHROW_ENABLED true
-#define BLOODTRACKS_ENABLED true
-#define ENERGYCRISIS_ENABLED true
-#define WHITEFOREST_ENABLED true
-
 char current_map[53];
 int round_end_repeats;
 int IsRoundStarted = false;
