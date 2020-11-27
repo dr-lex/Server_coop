@@ -1,53 +1,42 @@
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
-#if SOURCEMOD_V_MINOR < 7
- #error Old version sourcemod!
-#endif
 #pragma newdecls required
 
-#define MAX_RESTRICTEDSPOTS 10
-#define FCVAR_SS_ADDED (1<<18)
+#define PLUGIN_VERSION "1.2 mod TY"
 
-char sg_map[100];
-Handle hg_checkTimer;
-float fg_arrayXYZ[MAX_RESTRICTEDSPOTS][7];
+char sg_stf[8][32];
+char sg_string[120];
+char sg_file[160];
+char sg_l4d2Map[65];
+float fg_xyz[32][8];
+float fg_MINdistance;
+int ig_protec = 1;
+int ig_tick = 0;
+int ig_timer = 10;
+int ig_lines = 0;
+int ig_deleteAllCount;
 float fg_arrayNewRestrictedSpot[3];
 float fg_newRestrictedSpot_Radious;
 float fg_arrayNewRestrictedSpot_MoveTo[3];
-float fg_MINdistance;
-float fg_timeInterval;
-int ig_restrictedSpots_Count;
-int ig_deleteAllCount;
-bool bg_pauseTimer;
 
 public Plugin myinfo = 
 {
 	name = "L4D Restricted Zones",
-	author = "SkyDavid",
+	author = "SkyDavid & TY",
 	description = "This plugins allows you to restrict specific L4D zones",
-	version = "1.3",
-	url = ""
+	version = PLUGIN_VERSION,
+	url = "www.sky.zebgames.com"
 }
 
 public void OnPluginStart()
 {
-	RegAdminCmd("rz_deleteall", CmdDeleteAll, ADMFLAG_ROOT, "Deletes all the restricted zones for the current map");
-	RegAdminCmd("rz_deletenear", CmdDeleteNear, ADMFLAG_ROOT, "Deletes all the restricted zones near the current location. Radious is optional.");
-	RegAdminCmd("rz_storeloc", CmdStoreLocation, ADMFLAG_ROOT, "Stores the current location as a restricted zone. Radious is optional.");
-	RegAdminCmd("rz_storemoveto", CmdStoreMoveTo, ADMFLAG_ROOT, "Stores the current location as a 'Move-to' spot for last restricted zone.");
+	RegAdminCmd("rz_deleteall",   CmdDeleteAll,     ADMFLAG_CHEATS, "Deletes all the restricted zones for the current map");
+	RegAdminCmd("rz_deletenear",  CmdDeleteNear,    ADMFLAG_CHEATS, "Deletes all the restricted zones near the current location. Radious is optional.");
+	RegAdminCmd("rz_storeloc",    CmdStoreLocation, ADMFLAG_CHEATS, "Stores the current location as a restricted zone. Radious is optional.");
+	RegAdminCmd("rz_storemoveto", CmdStoreMoveTo,   ADMFLAG_CHEATS, "Stores the current location as a 'Move-to' spot for last restricted zone.");
 
-	bg_pauseTimer = false;
-	hg_checkTimer = null;
-}
-
-void KillCheckTimer()
-{
-	if (hg_checkTimer != null)
-	{
-		KillTimer(hg_checkTimer, false);
-		hg_checkTimer = null;
-	}
+	CreateTimer(1.0, TyTimerUpdate, _, TIMER_REPEAT);
 }
 
 public bool CheckPermissions(int client)
@@ -72,27 +61,22 @@ public bool CheckPermissions(int client)
 
 public Action CmdDeleteAll(int client, int args)
 {
-	// Checks permission ...
 	if (!CheckPermissions(client))
 	{
 		return Plugin_Handled;
 	}
 
-	// We pause the timer
-	bg_pauseTimer = true;
-
-	// We requiere a validation ...
+	ig_protec = 1;
+	
 	if (ig_deleteAllCount == 0)
 	{
-		// We unpause the timer
-		bg_pauseTimer = false;
+		ig_protec = 0;
 
 		ReplyToCommand (client, "[RZ] Please execute this command again to confirm that you want to delete all the restricted zones for this map.");
 		ig_deleteAllCount = 1;
 		return Plugin_Handled;
 	}
 
-	// Now we proceed to delete the file
 	if (!DeleteAllZones())
 	{
 		ReplyToCommand (client, "[RZ] There were no restricted zones stored for this map!");
@@ -102,30 +86,24 @@ public Action CmdDeleteAll(int client, int args)
 		ReplyToCommand (client, "[RZ] All the restricted zones for this map has been deleted!");
 	}
 
-	// We reload spots
-	LoadSpots();
+	TyLoadFile();
 
-	// We unpause the timer
-	bg_pauseTimer = false;
+	ig_protec = 0;
 	return Plugin_Handled;
 }
 
 public Action CmdDeleteNear (int client, int args)
 {
-	// Checks permission ...
 	if (!CheckPermissions(client))
 	{
 		return Plugin_Handled;
 	}
 
-	// We pause the timer
-	bg_pauseTimer = true;
+	ig_protec = 1;
 
-	// We determine the radius
 	char arg[50];
 	float radius;
 
-	// if radius was not provided, we use 50 by default
 	if (args < 1)
 	{
 		radius = 50.00;
@@ -139,21 +117,17 @@ public Action CmdDeleteNear (int client, int args)
 		{
 			ReplyToCommand (client, "[RZ] The radius must be between 10-1000. Command aborted.");
 
-			// We unpause the timer
-			bg_pauseTimer = false;
+			ig_protec = 0;
 
 			return Plugin_Handled;
 		}
 	}
 
-	// We reload the spots
-	LoadSpots();
+	TyLoadFile();
 
-	// Deletion of near spots ...
 	DeleteNearSpots(client, radius);
 
-	// We unpause the timer
-	bg_pauseTimer = false;
+	ig_protec = 0;
 	return Plugin_Handled;
 }
 
@@ -169,60 +143,48 @@ void DeleteNearSpots(int client, float radius)
 
 	deletedCount = 0;
 
-	// We store the current location of the player
 	GetClientAbsOrigin(client, Coord);
 
-	// Checks all spots of the map
-	for (i=0; i<ig_restrictedSpots_Count; i++)
+	for (i=0; i<ig_lines; i++)
 	{
-		// Get restricted spot's coordinates
-		Comp[0] = fg_arrayXYZ[i][0];
-		Comp[1] = fg_arrayXYZ[i][1];
-		Comp[2] = fg_arrayXYZ[i][2];
+		Comp[0] = fg_xyz[i][0];
+		Comp[1] = fg_xyz[i][1];
+		Comp[2] = fg_xyz[i][2];
 
-		// Gets the difference on each ...
 		for (j=0;j<3;j++)
 		{
 			Dif[j] = Coord[j] - Comp[j];
 		}
 
-		// calculates distance
 		fDist = SquareRoot(Dif[0]*Dif[0] + Dif[1]*Dif[1] + Dif[2]*Dif[2]);
 
-		// Gets absolute value
 		if (fDist < 0)
 		{
 			fDist = fDist * -1;
 		}
 
-		// If player is close to the spot, we mark it for deletion ...
 		if (fDist < radius)
 		{
 			deletedCount++;
 
-			fg_arrayXYZ[i][0] = 0.0;
-			fg_arrayXYZ[i][1] = 0.0;
-			fg_arrayXYZ[i][2] = 0.0;
+			fg_xyz[i][0] = 0.0;
+			fg_xyz[i][1] = 0.0;
+			fg_xyz[i][2] = 0.0;
 		}
 	}
 
-	// If we had spots to delete ...
 	if (deletedCount > 0)
 	{
-		// We store all of the locations .. (except for the ones being deleted)
 		if (!StoreAllRestrictedZones()) 
 		{
-			// If an error was found ..
 			ReplyToCommand(client, "[RZ] An error was found when deleting the restricted zones.", deletedCount);
 		}
 		else
 		{
-			// We reply the command
 			ReplyToCommand(client, "[RZ] %i zones has been deleted.", deletedCount);
 		}
 
-		// We reload the locations
-		LoadSpots();
+		TyLoadFile();
 	}
 	else
 	{
@@ -232,29 +194,24 @@ void DeleteNearSpots(int client, float radius)
 
 public Action CmdStoreLocation(int client, int args)
 {
-	// Checks permission ...
 	if (!CheckPermissions(client))
 	{
 		return Plugin_Handled;
 	}
 
-	// We pause the timer
-	bg_pauseTimer = true;
+	ig_protec = 1;
 
-	// If we reached the limit of restricted points ...
-	if (ig_restrictedSpots_Count == MAX_RESTRICTEDSPOTS)
+	if (ig_lines >= 30)
 	{
-		ReplyToCommand (client, "[RZ] The maximum of %i restricted zones has been reached.", MAX_RESTRICTEDSPOTS);
+		ReplyToCommand (client, "[RZ] The maximum of %i restricted zones has been reached.", 30);
 
-		// We unpause the timer
-		bg_pauseTimer = false;
+		ig_protec = 0;
 		return Plugin_Handled;
 	}
 
 	char arg[50];
 	float radius;
 
-	// if radius was not provided, we use 50 by default
 	if (args < 1)
 	{
 		radius = 50.00;
@@ -268,58 +225,47 @@ public Action CmdStoreLocation(int client, int args)
 		{
 			ReplyToCommand (client, "[RZ] The radius must be between 10-1000. Command aborted.");
 
-			// We unpause the timer
-			bg_pauseTimer = false;
+			ig_protec = 0;
 			return Plugin_Handled;
 		}
 	}
 
-	// We store the current location of the player
 	GetClientAbsOrigin(client, fg_arrayNewRestrictedSpot);
 	fg_newRestrictedSpot_Radious = radius;
 
 	ReplyToCommand(client, "[RZ] Restricted zone noted. Radious set on %f. Use rz_storemoveto to indicate the 'move to' location and store the zone.", radius);	
 
-	// We unpause the timer
-	bg_pauseTimer = false;
+	ig_protec = 0;
 	return Plugin_Handled;
 }
 
 public Action CmdStoreMoveTo (int client,int args)
 {
-	// Checks permission ...
 	if (!CheckPermissions(client))
 	{
 		return Plugin_Handled;
 	}
 
-	// We pause the timer
-	bg_pauseTimer = true;
+	ig_protec = 1;
 
-	// Check if location was stored ...
 	if ((fg_arrayNewRestrictedSpot[0]==0.0)&&(fg_arrayNewRestrictedSpot[1]==0.0)&&(fg_arrayNewRestrictedSpot[2]==0.0))
 	{
 		ReplyToCommand(client, "[RZ] You need to first select a restricted location with the rz_storeloc.");
 
-		// We unpause the timer
-		bg_pauseTimer = false;
+		ig_protec = 0;
 		return Plugin_Handled;
 	}
 
-	// We store the current location of the player
 	GetClientAbsOrigin(client, fg_arrayNewRestrictedSpot_MoveTo);
 
-	// First we validate if the Move-To location is not within the reach of the restricted spot's radio ...
 	if (Distance (fg_arrayNewRestrictedSpot_MoveTo[0], fg_arrayNewRestrictedSpot_MoveTo[1], fg_arrayNewRestrictedSpot_MoveTo[2], fg_arrayNewRestrictedSpot[0], fg_arrayNewRestrictedSpot[1], fg_arrayNewRestrictedSpot[2]) <= fg_newRestrictedSpot_Radious)
 	{
 		ReplyToCommand(client, "[RZ] This location is too close to the restricted spot. Please move away from it.");
 
-		// We unpause the timer
-		bg_pauseTimer = false;
+		ig_protec = 0;
 		return Plugin_Handled;
 	}
 
-	// Now we store all the info to the data file ...
 	if (!StoreRestrictedZone())
 	{
 		ReplyToCommand (client, "[RZ] There was an error storing the restricted zone.");
@@ -329,21 +275,17 @@ public Action CmdStoreMoveTo (int client,int args)
 		ReplyToCommand (client, "[RZ] Restricted zone was stored.");
 	}
 
-	// We reload spots
-	LoadSpots();
+	TyLoadFile();
 
-	// We unpause the timer
-	bg_pauseTimer = false;
+	ig_protec = 0;
 	return Plugin_Handled;
 }
 
 public bool DeleteAllZones()
 {
-	// We define the path + filename
 	char fileName[256];
-	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "gamedata/rz_%s.cfg", sg_map);
+	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "data/rz/rz_%s.cfg", sg_l4d2Map);
 
-	// We create the file
 	File hFile = OpenFile(fileName, "w+");
 	if (hFile == null)
 	{
@@ -354,26 +296,65 @@ public bool DeleteAllZones()
 	return true;
 }
 
+void TyLoadFile()
+{
+	ig_lines = 0;
+	sg_file[0] = '\0';
+	BuildPath(Path_SM, sg_file, sizeof(sg_file) - 1, "data/rz/rz_%s.cfg", sg_l4d2Map);
+
+	File hFile = OpenFile(sg_file, "r");
+	if (hFile != null)
+	{
+		FileSeek(hFile, 0, SEEK_SET);
+		int i = 0;
+		while (i < 30)
+		{
+			sg_string[0] = '\0';
+			if (!ReadFileLine(hFile, sg_string, sizeof(sg_string) - 1))
+			{
+				break;
+			}
+
+			if (ExplodeString(sg_string, "\t", sg_stf, sizeof(sg_stf) - 1, sizeof(sg_stf[]) - 1) != 7)
+			{
+				break;
+			}
+
+			fg_xyz[i][0] = StringToFloat(sg_stf[0]);
+			fg_xyz[i][1] = StringToFloat(sg_stf[1]);
+			fg_xyz[i][2] = StringToFloat(sg_stf[2]);
+			fg_xyz[i][3] = StringToFloat(sg_stf[3]);
+			fg_xyz[i][4] = StringToFloat(sg_stf[4]);
+			fg_xyz[i][5] = StringToFloat(sg_stf[5]);
+			fg_xyz[i][6] = StringToFloat(sg_stf[6]);
+
+			ig_lines += 1;
+			i += 1;
+		}
+
+		CloseHandle(hFile);
+		if (ig_lines == 0)
+		{
+			ig_timer = 999;
+		}
+	}
+}
+
 public bool StoreRestrictedZone()
 {
-	// We define the path + filename
 	char fileName[256];
-	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "gamedata/rz_%s.cfg", sg_map);
+	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "data/rz/rz_%s.cfg", sg_l4d2Map);
 
-	// We create the file
 	File hFile = OpenFile(fileName, "a+");
 	if (hFile == null)
 	{
 		return false;
 	}
 
-	// We find the end of the file
 	FileSeek(hFile, 0, SEEK_END);
 
-	// We store the info into the file
 	if (!WriteFileLine (hFile, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t", fg_arrayNewRestrictedSpot[0], fg_arrayNewRestrictedSpot[1], fg_arrayNewRestrictedSpot[2], fg_newRestrictedSpot_Radious, fg_arrayNewRestrictedSpot_MoveTo[0], fg_arrayNewRestrictedSpot_MoveTo[1], fg_arrayNewRestrictedSpot_MoveTo[2]))
 	{
-		// Error, so we abort ...
 		CloseHandle(hFile);
 		return false;
 	}
@@ -384,36 +365,29 @@ public bool StoreRestrictedZone()
 
 public bool StoreAllRestrictedZones()
 {
-	// We define the path + filename
 	char fileName[256];
-	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "gamedata/rz_%s.cfg", sg_map);
+	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "data/rz/rz_%s.cfg", sg_l4d2Map);
 
-	// We create the file
 	File hFile = OpenFile(fileName, "w+");
 	if (hFile == null)
 	{
 		return false;
 	}
 
-	// We find the start of the file
 	FileSeek(hFile, 0, SEEK_SET);
 
 	int i;
 
-	// Checks all spots of the map
-	for (i=0; i<ig_restrictedSpots_Count; i++)
+	for (i=0; i<ig_lines; i++)
 	{
-		// If the zone was marked for deletion, we skip it ...
-		if ((fg_arrayXYZ[i][0] == 0.0)&&(fg_arrayXYZ[i][1] == 0.0)&&(fg_arrayXYZ[i][2] == 0.0))
+		if ((fg_xyz[i][0] == 0.0)&&(fg_xyz[i][1] == 0.0)&&(fg_xyz[i][2] == 0.0))
 		{
 			break;
 		}
 
-		// We store the info into the file
-		if (!WriteFileLine (hFile, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t", fg_arrayXYZ[i][0], fg_arrayXYZ[i][1], fg_arrayXYZ[i][2], fg_arrayXYZ[i][3], fg_arrayXYZ[i][4], fg_arrayXYZ[i][5], fg_arrayXYZ[i][6]))
+		if (!WriteFileLine (hFile, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t", fg_xyz[i][0], fg_xyz[i][1], fg_xyz[i][2], fg_xyz[i][3], fg_xyz[i][4], fg_xyz[i][5], fg_xyz[i][6]))
 		{
 			PrintToChatAll("error writing line");
-			// Error, so we abort ...
 			CloseHandle(hFile);
 			return false;
 		}
@@ -423,142 +397,23 @@ public bool StoreAllRestrictedZones()
 	return true;
 }
 
-public void LoadSpots()
-{
-	// We reset the variables
-	ig_restrictedSpots_Count = 0;
-
-	// We define the path + filename
-	char fileName[256];
-
-	// we declare the line
-	char line[500];
-
-	// we get the coordinates
-	char data[7][201];
-
-	BuildPath (Path_SM, fileName, sizeof(fileName)-1, "gamedata/rz_%s.cfg", sg_map);
-
-	// We read the file
-	File hFile = OpenFile(fileName, "r");
-	if (hFile == null)
-	{
-		return;
-	}
-
-	FileSeek (hFile, 0, SEEK_SET);
-
-	while (!IsEndOfFile(hFile))
-	{
-		// we read the line
-		if (!ReadFileLine(hFile, line, sizeof(line)-1))
-		{
-			break;
-		}
-
-		if (ExplodeString(line, "\t", data, 7, 200) != 7)
-		{
-			break;
-		}
-
-		// We store them
-		int i;
-		int j;
-		i = ig_restrictedSpots_Count;
-		for (j = 0; j < 7; j++)
-		{
-			fg_arrayXYZ[i][j] = StringToFloat(data[j]);
-		}
-
-		// We increment the counter ...
-		ig_restrictedSpots_Count++;
-	}
-
-	CloseHandle(hFile);
-
-	// This determines if we should start or not the timer 
-	if (ig_restrictedSpots_Count == 0)
-	{
-		// We kill the timer
-		KillCheckTimer();
-	}
-	else
-	{
-		// We set the minimum distance to a high value ...
-		fg_MINdistance = 999999.99;
-
-		// We kill the timer
-		KillCheckTimer();
-
-		// We start a timer ....
-		fg_timeInterval = 1.0; // We start off with 1 second between checks, just in case there's a restricted spot near spawn 
-		hg_checkTimer = CreateTimer(fg_timeInterval, LocationCheckThread, _, TIMER_REPEAT);
-	}
-}
-
 public void OnMapStart()
 {
-	// Load current Map name
-	GetCurrentMap(sg_map, sizeof(sg_map)-1);
-
-	// Loads spots
-	LoadSpots();
-
-	// We reset the deleteall count ...
+	ig_tick = 0;
+	ig_timer = 2;
+	ig_protec = 0;
 	ig_deleteAllCount = 0;
+	GetCurrentMap(sg_l4d2Map, sizeof(sg_l4d2Map) - 1);
+	TyLoadFile();
 }
 
 public void OnMapEnd()
 {
-	// We kill the timer
-	KillCheckTimer();
+	ig_tick = 0;
+	ig_timer = 30;
+	ig_protec = 1;
 }
 
-public void CheckTimerReset()
-{
-	float time;
-
-	// We set the check interval depending on the minimum distance ... (Thx to ChillyWI for his idea).
-	if (fg_MINdistance > 4000.0)
-	{
-		time = 19.00;
-	}
-	else if (fg_MINdistance > 2000.0)
-	{
-		time = 10.00;
-	}
-	else if (fg_MINdistance > 1300.0)
-	{
-		time = 6.00;
-	}
-	else if (fg_MINdistance > 900.0)
-	{
-		time = 4.00;
-	}
-	else if (fg_MINdistance > 400.0)
-	{
-		time = 2.00;
-	}
-	else
-	{
-		time = 0.5;
-	}
-
-	// If the current interval is different from the one we should have according to the current distance ...
-	if (fg_timeInterval != time)
-	{
-		// We store the new interval ..
-		fg_timeInterval = time;
-
-		// We kill the timer
-		KillCheckTimer();
-
-		// We reset the timer with the new interval ...
-		hg_checkTimer = CreateTimer(fg_timeInterval, LocationCheckThread, _, TIMER_REPEAT);
-	}
-}
-
-// This function returns the distance between the 2 coordinates ...
 public float Distance (float x1, float y1, float z1, float x2, float y2, float z2)
 {
 	static float fsDist;
@@ -579,72 +434,83 @@ public float Distance (float x1, float y1, float z1, float x2, float y2, float z
 	return fsDist;
 }
 
-void CheckClientCoordinates(int client)
+void TyClientXYZ(int client)
 {
-	int i;
-	float Coord[3];
+	float fCxyz[3];
 	float fNewXYZ[3];
 	float fDist;
+	GetClientAbsOrigin(client, fCxyz);
 
-	// We store the current location of the player
-	GetClientAbsOrigin(client, Coord);
-
-	// Checks all spots of the map
-	for (i = 0; i < ig_restrictedSpots_Count; i++)
+	int i = 0;
+	while (i < ig_lines)
 	{
-		// calculates distance between the current position and the restricted spot ..
-		fDist = Distance(Coord[0], Coord[1], Coord[2], fg_arrayXYZ[i][0], fg_arrayXYZ[i][1], fg_arrayXYZ[i][2]);
-
-		// If player is at least XX points close to that spot .... we move and warn him ...
-		if (fDist < fg_arrayXYZ[i][3])
+		fDist = Distance(fCxyz[0], fCxyz[1], fCxyz[2], fg_xyz[i][0], fg_xyz[i][1], fg_xyz[i][2]);
+		if (fDist < fg_xyz[i][3])
 		{
-			// Get new location's coordinates (to where the player will be moved to if it's on the restricted spot)
-			fNewXYZ[0] = fg_arrayXYZ[i][4];
-			fNewXYZ[1] = fg_arrayXYZ[i][5];
-			fNewXYZ[2] = fg_arrayXYZ[i][6];
-
-			// Warn ...
-			PrintHintText(client, "\x01This zone is restricted. You have been moved by the server!");
-
-			// Move ...
+			fNewXYZ[0] = fg_xyz[i][4];
+			fNewXYZ[1] = fg_xyz[i][5];
+			fNewXYZ[2] = fg_xyz[i][6];
 			TeleportEntity(client, fNewXYZ, NULL_VECTOR, NULL_VECTOR);
 		}
 
-		// If this distance is less than the current minimum .... we set it as minimum and then check if timer should be reset ...
 		if (fDist < fg_MINdistance)
 		{
 			fg_MINdistance = fDist;
 		}
+		i += 1;
 	}
 }
 
-public Action LocationCheckThread(Handle timer)
+void TyTimerInfinite()
 {
-	if (bg_pauseTimer == true)
+	ig_tick += 1;
+	if (ig_tick > ig_timer)
 	{
-		return Plugin_Continue;
-	}
-
-	int i = 0;
-
-	// We reset the minimum distance from all players to all restricted spots ...
-	fg_MINdistance = 4001.00;
-
-	for (i=1; i<=MaxClients; ++i)
-	{
-		if (IsClientInGame(i))
+		if (ig_lines > 0)
 		{
-			if(IsPlayerAlive(i))
+			fg_MINdistance = 3001.0;
+			for (int i = 1; i <= MaxClients; i++)
 			{
-				if (GetClientTeam(i) == 2)
+				if (IsClientInGame(i) && IsPlayerAlive(i) && GetClientTeam(i) == 2)
 				{
-					CheckClientCoordinates(i);
+					TyClientXYZ(i);
 				}
 			}
-		}
-	}
 
-	// We check is timer should be reset ..
-	CheckTimerReset();
-	return Plugin_Continue;
+			ig_timer = 0;
+			if (fg_MINdistance > 300.0)
+			{
+				ig_timer = 1;
+			}
+			if (fg_MINdistance > 500.0)
+			{
+				ig_timer = 2;
+			}
+			if (fg_MINdistance > 900.0)
+			{
+				ig_timer = 3;
+			}
+			if (fg_MINdistance > 1300.0)
+			{
+				ig_timer = 5;
+			}
+			if (fg_MINdistance > 2000.0)
+			{
+				ig_timer = 8;
+			}
+			if (fg_MINdistance > 3000.0)
+			{
+				ig_timer = 14;
+			}
+		}
+		ig_tick = 0;
+	}
+}
+
+public Action TyTimerUpdate(Handle timer)
+{
+	if (!ig_protec)
+	{
+		TyTimerInfinite();
+	}
 }
