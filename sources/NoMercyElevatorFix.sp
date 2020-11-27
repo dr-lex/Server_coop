@@ -1,41 +1,12 @@
-/*
- * ============================================================================
- *
- *  File:			NoMercyElevatorFix.sp
- *  Description:	Provides a work around for the current bug with players
- *					falling through the elevator on No Mercy.
- *
- *  Copyright (C) 2010  Mr. Zero <mrzerodk@gmail.com>
- *
- *  No Mercy Elevator Fix is free software: you can redistribute it and/or 
- *  modify it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  No Mercy Elevator Fix is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with No Mercy Elevator Fix.  If not, see 
- *  <http://www.gnu.org/licenses/>.
- *
- * ============================================================================
- */
+#include <sourcemod>
+#include <sdktools>
+#pragma newdecls required
 
 #define PLUGIN_VERSION	"1.0"
 #define TEAM_SURVIVOR 2
 
-//#pragma semicolon 1
-#include <sourcemod>
-#include <sdktools>
-#if SOURCEMOD_V_MINOR < 7
- #error Old version sourcemod!
-#endif
-#pragma newdecls required
-
 char NO_MERCY_MAP4[] = "c8m4_interior";
+char NO_STABIUM_MAP1[] = "l4d2_stadium1_apartment";
 char ELEVATOR_BUTTON[] = "elevator_button";
 char ELEVATOR_DOORS_LOW[] = "door_elevouterlow";
 char ELEVATOR_DOORS_HIGH[] = "door_elevouterhigh";
@@ -61,14 +32,14 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	CreateConVar("l4d2_nmelevatorfix_version", PLUGIN_VERSION, "No Mercy Elevator Fix Version", FCVAR_NONE | FCVAR_NOTIFY);
+	CreateConVar("l4d2_nmelevatorfix_version", PLUGIN_VERSION, "No Mercy Elevator Fix Version", FCVAR_NONE);
 }
 
 public void OnMapStart()
 {
 	char map[32];
 	GetCurrentMap(map, 32);
-	if (StrEqual(map, NO_MERCY_MAP4))
+	if (StrEqual(map, NO_MERCY_MAP4) || StrEqual(map, NO_STABIUM_MAP1))
 	{
 		if (!g_bIsEventsHooked)
 		{
@@ -96,44 +67,64 @@ public Action OnRoundStart_Event(Event event, const char[] name, bool dontBroadc
 
 public Action OnDoorMoving_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	if (!g_bIsElevatorButtonPushed) return;
+	if (!g_bIsElevatorButtonPushed)
+	{
+		return;
+	}
 
 	int entity = event.GetInt("entindex");
-	if (entity < 0 || entity > 2048 || !IsValidEntity(entity)) return;
+	if (entity < 0 || entity > 2048 || !IsValidEntity(entity))
+	{
+		return;
+	}
 
 	char buffer[128];
 	GetEntPropString(entity, Prop_Data, "m_iName", buffer, sizeof(buffer)); 
 
 	if (!g_bIsElevatorMoving)
 	{
-		if (!StrEqual(buffer, ELEVATOR_DOORS_LOW)) return;
+		if (!StrEqual(buffer, ELEVATOR_DOORS_LOW))
+		{
+			return;
+		}
 		g_bIsElevatorMoving = true;
 		CreateTimer(ELEVATOR_ORIGIN_INTERVAL, Elevator_Timer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
 	}
 	else
 	{
-		if (!StrEqual(buffer, ELEVATOR_DOORS_HIGH)) return;
+		if (!StrEqual(buffer, ELEVATOR_DOORS_HIGH))
+		{
+			return;
+		}
 		g_bIsElevatorMoving = false;
 	}
 }
 
 public Action OnPlayerUse_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	if (g_bIsElevatorButtonPushed) return;
+	if (g_bIsElevatorButtonPushed)
+	{
+		return;
+	}
 
 	int entity = event.GetInt("targetid");
-	if (entity < 0 || entity > 2048 || !IsValidEntity(entity)) return;
+	if (entity < 0 || entity > 2048 || !IsValidEntity(entity))
+	{
+		return;
+	}
 
 	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (client < 1 || 
-		client > MaxClients || 
-		!IsClientInGame(client) || 
-		GetClientTeam(client) != TEAM_SURVIVOR)
+	if (client < 1 || client > MaxClients || !IsClientInGame(client) || GetClientTeam(client) != TEAM_SURVIVOR)
+	{
 		return;
+	}
 
 	char buffer[128];
 	GetEntPropString(entity, Prop_Data, "m_iName", buffer, sizeof(buffer)); 
-	if (!StrEqual(buffer, ELEVATOR_BUTTON)) return;
+	if (!StrEqual(buffer, ELEVATOR_BUTTON))
+	{
+		return;
+	}
 
 	g_bIsElevatorButtonPushed = true;
 	g_iElevatorFloor = FindElevatorFloor();
@@ -141,7 +132,10 @@ public Action OnPlayerUse_Event(Event event, const char[] name, bool dontBroadca
 
 public Action Elevator_Timer(Handle timer)
 {
-	if (!g_bIsElevatorMoving || g_iElevatorFloor == -1) return Plugin_Stop;
+	if (!g_bIsElevatorMoving || g_iElevatorFloor == -1)
+	{
+		return Plugin_Stop;
+	}
 
 	float elevatorOrigin[3];
 	GetEntityAbsOrigin(g_iElevatorFloor, elevatorOrigin);
@@ -150,13 +144,20 @@ public Action Elevator_Timer(Handle timer)
 	float origin[3];
 	for (int client = 1; client <= MaxClients; client++)
 	{
-		if (!IsClientInGame(client) || GetClientTeam(client) != TEAM_SURVIVOR || !IsPlayerAlive(client)) continue;
+		if (!IsClientInGame(client) || GetClientTeam(client) != TEAM_SURVIVOR || !IsPlayerAlive(client))
+		{
+			continue;
+		}
+		
 		GetClientAbsOrigin(client, origin);
-		if (origin[2] >= elevatorOrigin[2]) continue;
+		if (origin[2] >= elevatorOrigin[2])
+		{
+			continue;
+		}
+		
 		origin[2] = elevatorOrigin[2] + ELEVATOR_FLOOR_TELE_Z_OFFSET;
 		TeleportEntity(client, origin, NULL_VECTOR, NULL_VECTOR);
 	}
-
 	return Plugin_Continue;
 }
 
@@ -167,20 +168,29 @@ static int FindElevatorFloor()
 	while ((entity = FindEntityByClassnameEx(entity, "func_elevator")) != -1)
 	{
 		GetEntPropString(entity, Prop_Data, "m_iName", buffer, 128);
-		if (StrEqual(buffer, ELEVATOR_FLOOR)) return entity;
+		if (StrEqual(buffer, ELEVATOR_FLOOR))
+		{
+			return entity;
+		}
 	}
 	return -1;
 }
 
 static int FindEntityByClassnameEx(int startEnt, const char[] classname)
 {
-	while (startEnt > -1 && !IsValidEntity(startEnt)) startEnt--;
+	while (startEnt > -1 && !IsValidEntity(startEnt))
+	{
+		startEnt--;
+	}
 	return FindEntityByClassname(startEnt, classname);
 }
 
 static int GetEntityAbsOrigin(int entity, float origin[3])
 {
-	if (entity < 1 || !IsValidEntity(entity)) return;
+	if (entity < 1 || !IsValidEntity(entity))
+	{
+		return;
+	}
 
 	float mins[3], maxs[3];
 	GetEntPropVector(entity, Prop_Send, "m_vecOrigin", origin);
