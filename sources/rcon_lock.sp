@@ -1,9 +1,6 @@
 //#pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
-#if SOURCEMOD_V_MINOR < 7
- #error Old version sourcemod!
-#endif
 #pragma newdecls required
 
 #define VERSION "0.6.7"
@@ -48,7 +45,7 @@ bool bServerLog = true;
 
 public void OnPluginStart()
 {
-	CreateConVar("sm_rconlock", VERSION, "Plugin version", FCVAR_NOTIFY|FCVAR_REPLICATED|FCVAR_DONTRECORD);
+	CreateConVar("sm_rconlock", VERSION, "Plugin version", FCVAR_REPLICATED|FCVAR_DONTRECORD);
 	AddCommandListener(Cmd_EntCreate,"ent_create");
 	AddCommandListener(Cmd_EntCreate,"give");
 	AddCommandListener(Cmd_EntFire,"ent_fire");
@@ -60,7 +57,7 @@ public void OnPluginStart()
 
 	// Grab the rcon password to prevent changes
 	rcon_pw = FindConVar("rcon_password");
-	HookConVarChange(rcon_pw, rcon_changed);
+	rcon_pw.AddChangeHook(rcon_changed);
 
 	// Flag any of the exploitable commands as cheats
 	ConVar curcmd;
@@ -188,13 +185,13 @@ public void OnConfigsExecuted()
 {
 	rcon_set = true;
 	GetConVarString(rcon_pw, correct_rcon_pw, sizeof(correct_rcon_pw));
-	if (GetConVarInt(mintries) == 5)
+	if (mintries.IntValue == 5)
 	{
-		SetConVarInt(mintries,10000);
+		SetConVarInt(mintries, 10000);
 	}
-	if (GetConVarInt(maxtries) == 10)
+	if (maxtries.IntValue == 10)
 	{
-		SetConVarInt(maxtries,10000);
+		SetConVarInt(maxtries, 10000);
 	}
 }
 
