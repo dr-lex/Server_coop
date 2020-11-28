@@ -86,9 +86,6 @@ Version History
 //#pragma semicolon 1
 
 #include <sourcemod>
-#if SOURCEMOD_V_MINOR < 7
- #error Old version sourcemod!
-#endif
 #pragma newdecls required
 #define PLUGIN_VERSION "1.4.1"
 
@@ -131,7 +128,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	// Plugin version public Cvar
-	CreateConVar("sm_vbping_version", PLUGIN_VERSION, "Very Basic High Ping Kicker Version", FCVAR_NONE|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("sm_vbping_version", PLUGIN_VERSION, "Very Basic High Ping Kicker Version", FCVAR_NONE|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_DONTRECORD);
 
 	// Debug command to see who is going to get kicked
 	RegConsoleCmd("sm_vbping_debug", cmd_Debug, "Displays player ping debug information");
@@ -151,7 +148,7 @@ public void OnPluginStart()
 	cvar_ImmunityFlag = CreateConVar("sm_vbping_immunityflag",		"",				"SourceMod admin flag used to grant immunity to all ping checking/kicking", FCVAR_NONE);
 
 	// Hook changing of the ping checking rate cvar
-	HookConVarChange(cvar_CheckRate, action_RateChanged);
+	cvar_CheckRate.AddChangeHook(action_RateChanged);
 
 	// Make that config!
 	AutoExecConfig(true, "vbping");
@@ -160,11 +157,10 @@ public void OnPluginStart()
 	BuildPath(Path_SM, Logfile, sizeof(Logfile), "logs/vbping.log");
 
 	// Start the timer
-	PingTimer = CreateTimer(GetConVarFloat(cvar_CheckRate), timer_CheckPing, INVALID_HANDLE, TIMER_REPEAT);
+	PingTimer = CreateTimer(cvar_CheckRate.FloatValue, timer_CheckPing, INVALID_HANDLE, TIMER_REPEAT);
 
 	// Initialize everyone's warnings at 0
-	int maxplayers = GetMaxClients();
-	for (int i = 1; i <= maxplayers; i++)
+	for (int i = 1; i <= MaxClients; i++)
 	{
 		PingWarnings[i] = 0;
 		PingDelay[i] = true;
@@ -172,7 +168,7 @@ public void OnPluginStart()
 
 	// Delay ping checking for 90 seconds to allow pings to normalize
 	TimerCheck = true;
-	CreateTimer(GetConVarFloat(cvar_MinTime), timer_EnableCheck);
+	CreateTimer(cvar_MinTime.FloatValue, timer_EnableCheck);
 }
 
 // Reset all players' warnings to 0, grant all players connection immunity,
@@ -186,11 +182,11 @@ public void OnMapStart()
 		PingDelay[i] = true;
 	}
 
-	if (PingTimer == null) PingTimer = CreateTimer(GetConVarFloat(cvar_CheckRate), timer_CheckPing, INVALID_HANDLE, TIMER_REPEAT);
+	if (PingTimer == null) PingTimer = CreateTimer(cvar_CheckRate.FloatValue, timer_CheckPing, INVALID_HANDLE, TIMER_REPEAT);
 
 	// Delay ping checking for 90 seconds to allow pings to normalize
 	TimerCheck = true;
-	CreateTimer(GetConVarFloat(cvar_MinTime), timer_EnableCheck);
+	CreateTimer(cvar_MinTime.FloatValue, timer_EnableCheck);
 }
 
 // Print debug information
@@ -219,7 +215,7 @@ public Action cmd_Debug(int client, int args)
 	}
 	
 	// If the number of players is less than the minimum set by the plugin, then report it.
-	int MinPlayers = GetConVarInt(cvar_MinPlayers);
+	int MinPlayers = cvar_MinPlayers.IntValue;
 	if (Players < MinPlayers) PrintToConsole(client, "[SM] Minimum players not met! %i / %i", Players, MinPlayers);
 
 	return Plugin_Handled;
@@ -232,7 +228,7 @@ public void OnClientPostAdminCheck(int client)
 {
 	PingWarnings[client] = 0;
 	PingDelay[client] = true;
-	CreateTimer(GetConVarFloat(cvar_MinTime), timer_ExpirePingDelay, client);
+	CreateTimer(cvar_MinTime.FloatValue, timer_ExpirePingDelay, client);
 }
 
 // Enable ping checking again, after the map change delay.
@@ -293,7 +289,7 @@ public Action timer_CheckPing(Handle timer)
 	// If the number of players is less than the minimum set by the plugin,
 	// then quit out.
 
-	if (Players < GetConVarInt(cvar_MinPlayers)) return;
+	if (Players < cvar_MinPlayers.IntValue) return;
 
 	// Perform the actual ping checking and warn issuing.
 	for (int i = 1; i <= MaxClients; i++)
@@ -312,19 +308,19 @@ public Action timer_CheckPing(Handle timer)
 			// This is done before giving a warnings, so they are not warned
 			// their final time, and then kicked for it.
 
-			if (PingWarnings[i] >= GetConVarInt(cvar_MaxWarnings))
+			if (PingWarnings[i] >= cvar_MaxWarnings.IntValue)
 			{
 				GetConVarString(cvar_KickMsg, Message, sizeof(Message));
 				KickClient(i, Message);
 
-				if (GetConVarBool(cvar_ShowPublicKick))
+				if (cvar_ShowPublicKick.BoolValue)
 				{
 					GetConVarString(cvar_KickMsgPublic, Message, sizeof(Message));
 					ReplaceString(Message, sizeof(Message), "{NAME}", Name, true);
 					PrintToChatAll("%s", Message);
 				}
 
-				if (GetConVarBool(cvar_LogActions)) LogToFile(Logfile, "%N [%s] has been kicked, excessive ping warnings (%i)", i, SteamID, PingWarnings[i]);
+				if (cvar_LogActions.BoolValue) LogToFile(Logfile, "%N [%s] has been kicked, excessive ping warnings (%i)", i, SteamID, PingWarnings[i]);
 
 				PingWarnings[i] = 0;
 				continue;
@@ -334,7 +330,7 @@ public Action timer_CheckPing(Handle timer)
 			// give them a warning.
 
 			Ping = GetClientAvgLatency(i, NetFlow_Outgoing) * 1024;
-			if (Ping > GetConVarInt(cvar_MaxPing))
+			if (Ping > cvar_MaxPing.IntValue)
 			{
 				// If the client has the immunity or ROOT flag, ignore them
 				if ((GetUserFlagBits(i) & ReadFlagString(Flag)) || (GetUserFlagBits(i) & ADMFLAG_ROOT)) continue;
@@ -343,7 +339,7 @@ public Action timer_CheckPing(Handle timer)
 				PingWarnings[i] = PingWarnings[i] + 1;
 
 				// Tell the player they received a ping warning
-				if (GetConVarBool(cvar_ShowWarnings))
+				if (cvar_ShowWarnings.BoolValue)
 				{
 					char tmp[32];
 					GetConVarString(cvar_WarningMsg, Message, sizeof(Message));
@@ -357,7 +353,7 @@ public Action timer_CheckPing(Handle timer)
 					PrintToChat(i, "%s", Message);
 				}
 				// Log the warning to the ping log
-				if (GetConVarBool(cvar_LogActions)) LogToFile(Logfile, "%N has %i ping warning (Ping: %f)", i, PingWarnings[i], Ping);
+				if (cvar_LogActions.BoolValue) LogToFile(Logfile, "%N has %i ping warning (Ping: %f)", i, PingWarnings[i], Ping);
 			}
 		}
 	}
