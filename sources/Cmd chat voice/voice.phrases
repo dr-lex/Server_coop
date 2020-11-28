@@ -1,0 +1,134 @@
+"Phrases"
+{
+	"Ready"
+	{
+		"en"		"Ready?"
+		"ru"		"Готовы?"
+	}
+	
+	"No"
+	{
+		"en"		"No"
+		"ru"		"Нет"
+	}
+	
+	"Yes"
+	{
+		"en"		"Yes"
+		"ru"		"Да"
+	}
+	
+	"Let's Go"
+	{
+		"en"		"Let's Go"
+		"ru"		"Пошли"
+	}
+	
+	"Hurry Up!"
+	{
+		"en"		"Hurry Up!"
+		"ru"		"Скорее!"
+	}
+	
+	"Wait Here!"
+	{
+		"en"		"Wait Here!"
+		"ru"		"Подождите!"
+	}
+	
+	"Be Careful"
+	{
+		"en"		"Be Careful"
+		"ru"		"Осторожно!"
+	}
+	
+	"Sorry"
+	{
+		"en"		"Sorry"
+		"ru"		"Извини"
+	}
+	
+	"Thanks!"
+	{
+		"en"		"Thanks!"
+		"ru"		"Спасибо!"
+	}
+	
+	"Lead On"
+	{
+		"en"		"Lead On"
+		"ru"		"Веди нас"
+	}
+	
+	"Nice Job!"
+	{
+		"en"		"Nice Job!"
+		"ru"		"Отличная работа!"
+	}
+	
+	"I'm With You"
+	{
+		"en"		"I'm With You"
+		"ru"		"Я здесь"
+	}
+	
+	"Main"
+	{
+		"en"		"Main"
+		"ru"		"Основное"
+	}
+	
+	"Are common"
+	{
+		"en"		"Are common"
+		"ru"		"Общие"
+	}
+	
+	"Smoker!"
+	{
+		"en"		"Smoker!"
+		"ru"		"Курильщик!"
+	}
+	
+	"Boomer!"
+	{
+		"en"		"Boomer!"
+		"ru"		"Толстяк!"
+	}
+	
+	"Hunter!"
+	{
+		"en"		"Hunter!"
+		"ru"		"Охотник!"
+	}
+	
+	"Spitter!"
+	{
+		"en"		"Spitter!"
+		"ru"		"Плевальщица!"
+	}
+	
+	"Jockey!"
+	{
+		"en"		"Jockey!"
+		"ru"		"Жокей!"
+	}
+	
+	"Charger!"
+	{
+		"en"		"Charger!"
+		"ru"		"Громила!"
+	}
+	
+	"Witch!"
+	{
+		"en"		"Witch!"
+		"ru"		"Ведьма!"
+	}
+	
+	"Tank!"
+	{
+		"en"		"Tank!"
+		"ru"		"Танк!"
+	}
+}
