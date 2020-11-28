@@ -2,9 +2,6 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
-#if SOURCEMOD_V_MINOR < 7
- #error Old version sourcemod!
-#endif
 #pragma newdecls required
 
 #define PLUGIN_VERSION "1.0.7"
@@ -48,7 +45,7 @@ public void OnPluginStart()
 
 	HookEvent("player_death", event_PlayerDeath);
 	
-	CreateConVar("l4d2_bile_the_world_version", PLUGIN_VERSION, " L4D2 Bile the World Plugin Version ", 					FCVAR_NONE|FCVAR_REPLICATED|FCVAR_DONTRECORD|FCVAR_NOTIFY);
+	CreateConVar("l4d2_bile_the_world_version", PLUGIN_VERSION, " L4D2 Bile the World Plugin Version ", 					FCVAR_NONE|FCVAR_REPLICATED|FCVAR_DONTRECORD);
 	splashRadius = CreateConVar("l4d2_bile_the_world_radius", "200", "Radius of Bile Splash on Boomer Death and Vomit Jar ", 	FCVAR_NONE|FCVAR_REPLICATED);
 	isEnabled = CreateConVar("l4d2_bile_the_world_enabled", "1", "Turn Bile the World on and off ", 						FCVAR_NONE|FCVAR_REPLICATED);
 	
@@ -88,10 +85,10 @@ public void OnEntityDestroyed(int entity)
 
 static int VomitSplash(bool BoomerDeath, float pos[3], int boomer)
 {		
-	if (!GetConVarBool(isEnabled)) return;
+	if (!isEnabled.BoolValue) return;
 	
 	float targetpos[3];
-	float distancesetting = GetConVarFloat(splashRadius);
+	float distancesetting = splashRadius.FloatValue;
 
 	if (BoomerDeath) // unfortunately we're forced to loop all entities here
 	{
@@ -108,25 +105,25 @@ static int VomitSplash(bool BoomerDeath, float pos[3], int boomer)
 				continue;
 			}
 			
-			if (GetConVarBool(cvar_bFling))
+			if (cvar_bFling.BoolValue)
 			{
 				float HeadingVector[3], AimVector[3];
-				float power = GetConVarFloat(cvar_slapPower);
+				float power = cvar_slapPower.FloatValue;
 				
 				// compute target vector
 				HeadingVector[0] = targetpos[0] - pos[0];
 				HeadingVector[1] = targetpos[1] - pos[1];
 				HeadingVector[2] = targetpos[2] - pos[2];
 			
-				AimVector[0] = FloatMul( Cosine( DegToRad(HeadingVector[1])  ) , power);
-				AimVector[1] = FloatMul( Sine( DegToRad(HeadingVector[1])  ) , power);
+				AimVector[0] = Cosine(DegToRad(HeadingVector[1])) * power;
+				AimVector[1] = Sine(DegToRad(HeadingVector[1])) * power;
 				
 				float current[3];
 				GetEntPropVector(i, Prop_Data, VELOCITY_ENTPROP, current);
 				
 				float resulting[3];
-				resulting[0] = FloatAdd(current[0], AimVector[0]);	
-				resulting[1] = FloatAdd(current[1], AimVector[1]);
+				resulting[0] = current[0] + AimVector[0];	
+				resulting[1] = current[1] + AimVector[1];
 				resulting[2] = power * SLAP_VERTICAL_MULTIPLIER;
 				
 				L4D2_Fling(i, resulting, boomer);
