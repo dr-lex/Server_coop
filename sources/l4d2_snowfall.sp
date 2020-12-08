@@ -5,7 +5,7 @@
 
 public Plugin myinfo =
 {
-	name = "[L4D & L4D2] Snowfall",
+	name = "[L4D/L4D2] Snowfall",
 	author = "dr_lex",
 	description = "Adds snowfall",
 	version = "0.1",
@@ -14,13 +14,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	char game[24];
-	GetGameFolderName(game, sizeof(game)-1);
-	if (!StrEqual(game, "left4dead2", false))
-	{
-		SetFailState("Plugin supports Left 4 Dead 2 only.");
-	}
-  
 	HookEvent("round_start", RoundStart, EventHookMode_PostNoCopy);
 }
 
