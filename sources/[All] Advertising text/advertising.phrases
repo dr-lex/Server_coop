@@ -36,15 +36,9 @@
 		"en"		"Information: For help, type !menu in chat"
 	}
 
-  "Spamtxt6"
+	"Spamtxt6"
 	{
 		"ru"		"Информация: Вы можете подать жалобу на игрока, написав !сomplaint в чате"
 		"en"		"Information: You can file a complaint against the player by writing !сomplaint in chat"
-	}
-
-	"Change the setting (Write in the console:"
-	{
-		"ru"		"Смените настройку (Пропишите в консоли:"
-		"en"		"Change the setting (Write in the console:"
 	}
 }
