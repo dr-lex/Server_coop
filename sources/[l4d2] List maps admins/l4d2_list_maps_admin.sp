@@ -17,7 +17,7 @@ public Plugin myinfo =
 	name = "[l4d2] List maps admins",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "",
-	version = "1.1",
+	version = "1.1.1",
 	url = ""
 };
 
@@ -107,11 +107,11 @@ public Action Cmd_AMenuMapsDlc(int client, int args)
 		Menu menu = new Menu(MenuHandlerCoopDLC);
 		menu.SetTitle("Maps");
 		menu.AddItem("1", "1. Back To School");
-		menu.AddItem("6", "2. Blackout Basement");
-		menu.AddItem("2", "3. Blood Proof");
-		menu.AddItem("3", "4. City 17");
-		menu.AddItem("4", "5. Chernobyl: Chapter One");
-		menu.AddItem("5", "6. Dam it 2! The Director's Cut");
+		menu.AddItem("2", "2. Blackout Basement");
+		menu.AddItem("3", "3. Blood Proof");
+		menu.AddItem("4", "4. City 17");
+		menu.AddItem("5", "5. Chernobyl: Chapter One");
+		menu.AddItem("6", "6. Dam it 2! The Director's Cut");
 		menu.AddItem("7", "7. Dam It [Remastered]");
 		menu.AddItem("8", "8. Dark Wood (Extended)");
 		menu.AddItem("9", "9. Dead Before Dawn (Extended)");
