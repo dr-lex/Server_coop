@@ -572,6 +572,11 @@ public Action CampaignSurvival(int client, int campaigns, int maps)
 		{
 			Format(sBuffer, sizeof(sBuffer)-1, "Map: %s", m3);
 			menu.AddItem("3", sBuffer);
+			if (maps > 3)
+			{
+				Format(sBuffer, sizeof(sBuffer)-1, "Map: %s", m4);
+				menu.AddItem("4", sBuffer);
+			}
 		}
 	}
 	menu.ExitBackButton = true;
