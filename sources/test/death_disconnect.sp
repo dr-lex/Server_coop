@@ -5,33 +5,18 @@
 
 char sg_ar_file[160];
 
-int ig_deadplay[MAXPLAYERS + 1];
-
 public Plugin myinfo =
 {
 	name = "Death Disconnect",
 	author = "dr lex",
 	description = "",
-	version = "1.0",
+	version = "1.1",
 	url = "http://steamcommunity.com/id/dr_lex"
 }
 
 public void OnPluginStart()
 {
-	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("player_disconnect", Event_PlayerDisconnect);
-}
-
-public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-	if (!IsFakeClient(client))
-	{
-		if (GetClientTeam(client) == 2)
-		{
-			ig_deadplay[client] = 1;
-		}
-	}
 }
 
 public void Event_PlayerDisconnect(Event event, const char[] name, bool dontBroadcast)
@@ -41,7 +26,7 @@ public void Event_PlayerDisconnect(Event event, const char[] name, bool dontBroa
 		int client = GetClientOfUserId(event.GetInt("userid"));
 		if (client && IsClientInGame(client))
 		{
-			if (ig_deadplay[client])
+			if (!IsPlayerAlive(client))
 			{
 				char s1[32];
 				event.GetString("networkid", s1, sizeof(s1));
@@ -78,8 +63,6 @@ public void OnClientPostAdminCheck(int client)
 {
 	if (!IsFakeClient(client))
 	{
-		ig_deadplay[client] = 0;
-		
 		char s1[24];
 		GetClientAuthId(client, AuthId_Steam2, s1, sizeof(s1)-1);
 		
