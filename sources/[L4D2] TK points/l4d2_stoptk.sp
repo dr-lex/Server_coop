@@ -13,17 +13,22 @@ int ig_time_wp[MAXPLAYERS+1];
 int ig_time_wp_turbo[MAXPLAYERS+1];
 int ig_time_nospam[MAXPLAYERS+1];
 
+bool g_bLeft4Dead2;
+#define PLUGIN_VERSION "1.6"
+
 public Plugin myinfo = 
 {
 	name = "[L4D2] TK points",
 	author = "dr_lex",
 	description = "",
-	version = "1.5.6",
+	version = PLUGIN_VERSION,
 	url = "https://steamcommunity.com/id/dr_lex/"
 }
 
 public void OnPluginStart()
 {
+	CreateConVar("l4d_tk_stop_version", PLUGIN_VERSION, "Gear Transfer plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	
 	RegConsoleCmd("sm_tk", CMD_Tk);
 	
 	HookEvent("player_hurt", Event_PlayerHurt);
@@ -31,11 +36,33 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("heal_success", Event_HealSuccess);
 	HookEvent("revive_success", Event_ReviveSuccess);
-	HookEvent("defibrillator_used", Event_DefibrillatorUsed);
+	if(g_bLeft4Dead2)
+	{
+		HookEvent("defibrillator_used", Event_DefibrillatorUsed);
+	}
 	HookEvent("finale_win", Event_MapTransition);
 	HookEvent("map_transition", Event_MapTransition, EventHookMode_PostNoCopy);
 	
 	BuildPath(Path_SM, sg_file1, sizeof(sg_file1)-1, "data/GagMuteBan.txt");
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	EngineVersion test = GetEngineVersion();
+	if (test == Engine_Left4Dead)
+	{
+		g_bLeft4Dead2 = false;
+	}
+	else if (test == Engine_Left4Dead2)
+	{
+		g_bLeft4Dead2 = true;
+	}
+	else
+	{
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
 }
 
 public void OnConfigsExecuted()
@@ -112,42 +139,96 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 						{
 							if (!IsPlayerBussy(iUserid))
 							{
-								if (StrEqual(weapon, "rifle", true) 
-								|| StrEqual(weapon, "rifle_sg552", true) 
-								|| StrEqual(weapon, "rifle_desert", true) 
-								|| StrEqual(weapon, "rifle_ak47", true))
+								if (g_bLeft4Dead2)
+								{
+									if (StrEqual(weapon, "rifle_sg552", true) 
+									|| StrEqual(weapon, "rifle_desert", true) 
+									|| StrEqual(weapon, "rifle_ak47", true))
+									{
+										HxEyeAngles(iAttacker, -5.0);
+										ig_TKPoints[iAttacker] += 0.2;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "rifle_m60", true))
+									{
+										HxEyeAngles(iAttacker, -8.0);
+										ig_TKPoints[iAttacker] += 0.3;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "smg_silenced", true) 
+									|| StrEqual(weapon, "smg_mp5", true))
+									{
+										HxEyeAngles(iAttacker, -3.0);
+										ig_TKPoints[iAttacker] += 0.1;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "shotgun_chrome", true))
+									{
+										HxEyeAngles(iAttacker, -2.0);
+										ig_TKPoints[iAttacker] += 0.1;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "shotgun_spas", true))
+									{
+										HxEyeAngles(iAttacker, -3.0);
+										ig_TKPoints[iAttacker] += 0.2;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "sniper_scout", true) 
+									|| StrEqual(weapon, "sniper_military", true) 
+									|| StrEqual(weapon, "sniper_awp", true))
+									{
+										HxEyeAngles(iAttacker, -3.0);
+										ig_TKPoints[iAttacker] += 0.2;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "pistol_magnum", true))
+									{
+										HxEyeAngles(iAttacker, -2.0);
+										ig_TKPoints[iAttacker] += 0.1;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "grenade_launcher", true))
+									{
+										ig_TKPoints[iAttacker] += 0.05;
+										return Plugin_Continue;
+									}
+									
+									if (StrEqual(weapon, "melee", true))
+									{
+										ig_TKPoints[iAttacker] += 0.0001;
+									}
+								}
+								
+								if (StrEqual(weapon, "rifle", true))
 								{
 									HxEyeAngles(iAttacker, -5.0);
 									ig_TKPoints[iAttacker] += 0.2;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "rifle_m60", true))
-								{
-									HxEyeAngles(iAttacker, -8.0);
-									ig_TKPoints[iAttacker] += 0.3;
-									return Plugin_Continue;
-								}
-								
-								if (StrEqual(weapon, "smg", true) 
-								|| StrEqual(weapon, "smg_silenced", true) 
-								|| StrEqual(weapon, "smg_mp5", true))
+								if (StrEqual(weapon, "smg", true))
 								{
 									HxEyeAngles(iAttacker, -3.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "pumpshotgun", true) 
-								|| StrEqual(weapon, "shotgun_chrome", true))
+								if (StrEqual(weapon, "pumpshotgun", true))
 								{
 									HxEyeAngles(iAttacker, -2.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "autoshotgun", true) 
-								|| StrEqual(weapon, "shotgun_spas", true))
+								if (StrEqual(weapon, "autoshotgun", true))
 								{
 									HxEyeAngles(iAttacker, -3.0);
 									ig_TKPoints[iAttacker] += 0.2;
@@ -159,33 +240,6 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 									HxEyeAngles(iAttacker, -2.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
-								}
-								
-								if (StrEqual(weapon, "sniper_scout", true) 
-								|| StrEqual(weapon, "sniper_military", true) 
-								|| StrEqual(weapon, "sniper_awp", true))
-								{
-									HxEyeAngles(iAttacker, -3.0);
-									ig_TKPoints[iAttacker] += 0.2;
-									return Plugin_Continue;
-								}
-								
-								if (StrEqual(weapon, "pistol_magnum", true))
-								{
-									HxEyeAngles(iAttacker, -2.0);
-									ig_TKPoints[iAttacker] += 0.1;
-									return Plugin_Continue;
-								}
-								
-								if (StrEqual(weapon, "grenade_launcher", true))
-								{
-									ig_TKPoints[iAttacker] += 0.05;
-									return Plugin_Continue;
-								}
-								
-								if (StrEqual(weapon, "melee", true))
-								{
-									ig_TKPoints[iAttacker] += 0.0001;
 								}
 								
 								if (event.GetInt("type") & 8)
