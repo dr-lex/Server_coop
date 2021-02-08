@@ -17,14 +17,24 @@ public Plugin myinfo =
 	name = "[l4d2] List maps admins",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "",
-	version = "1.1.1",
+	version = "1.2",
 	url = ""
 };
 
 public void OnPluginStart()
 {
 	RegAdminCmd("sm_amaps", Cmd_AMenuMaps, ADMFLAG_UNBAN, "");
-	RegAdminCmd("sm_amapsdlc", Cmd_AMenuMapsDlc, ADMFLAG_UNBAN, "");
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	EngineVersion test = GetEngineVersion();
+	if (test != Engine_Left4Dead2)
+	{
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
+		return APLRes_SilentFailure;
+	}
+	return APLRes_Success;
 }
 
 public Action Cmd_AMenuMaps(int client, int args)
@@ -50,6 +60,126 @@ public Action Cmd_AMenuMaps(int client, int args)
 		menu.AddItem("12", "12. Blood Harvest");
 		menu.AddItem("13", "13. Cold Stream");
 		menu.AddItem("14", "14. The Last Stand");
+		if (FileExists("missions/bts.txt", true))
+		{
+			menu.AddItem("D1", "DLC: Back To School");
+		}
+		if (FileExists("missions/blackoutbasement.txt", true))
+		{
+			menu.AddItem("D2", "DLC: Blackout Basement");
+		}
+		if (FileExists("missions/bloodproof.txt", true))
+		{
+			menu.AddItem("D3", "DLC: Blood Proof");
+		}
+		if (FileExists("missions/city17l4d2.txt", true))
+		{
+			menu.AddItem("D4", "DLC: City 17");
+		}
+		if (FileExists("missions/chernobyl_mission.txt", true))
+		{
+			menu.AddItem("D5", "DLC: Chernobyl: Chapter One");
+		}
+		if (FileExists("missions/damit.txt", true))
+		{
+			menu.AddItem("D6", "DLC: Dam it 2! The Director's Cut");
+		}
+		if (FileExists("missions/damitrm.txt", true))
+		{
+			menu.AddItem("D7", "DLC: Dam It [Remastered]");
+		}
+		if (FileExists("missions/darkwood.txt", true))
+		{
+			menu.AddItem("D8", "DLC: Dark Wood (Extended)");
+		}
+		if (FileExists("missions/dbdextended.txt", true))
+		{
+			menu.AddItem("D9", "DLC: Dead Before Dawn (Extended)");
+		}
+		if (FileExists("missions/deadcity2.txt", true))
+		{
+			menu.AddItem("D10", "DLC: Dead City II");
+		}
+		if (FileExists("missions/deadbeat.txt", true))
+		{
+			menu.AddItem("D11", "DLC: Deadbeat Escape");
+		}
+		if (FileExists("missions/deathrow.txt", true))
+		{
+			menu.AddItem("D12", "DLC: Death Row");
+		}
+		if (FileExists("missions/draxmap2_missions.txt", true))
+		{
+			menu.AddItem("D13", "DLC: Death Strip");
+		}
+		if (FileExists("missions/devilmountain.txt", true))
+		{
+			menu.AddItem("D14", "DLC: Devil Mountain");
+		}
+		if (FileExists("missions/l4d2_diescraper_362.txt", true))
+		{
+			menu.AddItem("D15", "DLC: Diescraper Redux");
+		}
+		if (FileExists("missions/fallindeath.txt", true))
+		{
+			menu.AddItem("D16", "DLC: Fall in Death");
+		}
+		if (FileExists("missions/farewell_chenming.txt", true))
+		{
+			menu.AddItem("D17", "DLC: Farewell Chenming");
+		}
+		if (FileExists("missions/ihatemountains.txt", true))
+		{
+			menu.AddItem("D19", "DLC: I Hate Mountains");
+		}
+		if (FileExists("missions/behind.txt", true))
+		{
+			menu.AddItem("D20", "DLC: Left Behind");
+		}
+		if (FileExists("missions/l4d2_planb_v051.txt", true))
+		{
+			menu.AddItem("D22", "DLC: Plan B");
+		}
+		if (FileExists("missions/precinct84.txt", true))
+		{
+			menu.AddItem("D23", "DLC: Precinct 84");
+		}
+		if (FileExists("missions/red.txt", true))
+		{
+			menu.AddItem("D24", "DLC: RedemptionII");
+		}
+		if (FileExists("missions/suicideblitz2.txt", true))
+		{
+			menu.AddItem("D25", "DLC: Suicide Blitz 2");
+		}
+		if (FileExists("missions/l4d2_thebloodymoors.txt", true))
+		{
+			menu.AddItem("D26", "DLC: The Bloody Moors");
+		}
+		if (FileExists("missions/tot.txt", true))
+		{
+			menu.AddItem("D27", "DLC: Tour of Terror");
+		}
+		if (FileExists("missions/urbanflight.txt", true))
+		{
+			menu.AddItem("D28", "DLC: Urban Flight");
+		}
+		if (FileExists("missions/viennacalling.txt", true))
+		{
+			menu.AddItem("D29", "DLC: Vienna Calling 1");
+		}
+		if (FileExists("missions/warcelona.txt", true))
+		{
+			menu.AddItem("D30", "DLC: Warcelona");
+		}
+		if (FileExists("missions/ravenholmwarmission2.txt", true))
+		{
+			menu.AddItem("D31", "DLC: We Don't Go To Ravenholm");
+		}
+		if (FileExists("missions/yama.txt", true))
+		{
+			menu.AddItem("D32", "DLC: Yama");
+		}
 		menu.ExitBackButton = true;
 		menu.Display(client, 30);
 	}
@@ -71,6 +201,58 @@ public Action Cmd_AMenuMaps(int client, int args)
 		menu.AddItem("12", "12. Blood Harvest");
 		menu.AddItem("13", "13. Cold Stream");
 		menu.AddItem("14", "14. The Last Stand");
+		if (FileExists("missions/darkwood.txt", true))
+		{
+			menu.AddItem("D1", "DLC: Dark Wood (Extended)");
+		}
+		if (FileExists("missions/devilmountain.txt", true))
+		{
+			menu.AddItem("D2", "DLC: Devil Mountain");
+		}
+		if (FileExists("missions/l4d2_diescraper_362.txt", true))
+		{
+			menu.AddItem("D3", "DLC: Diescraper Redux");
+		}
+		if (FileExists("missions/fallindeath.txt", true))
+		{
+			menu.AddItem("D4", "DLC: Fall in Death");
+		}
+		if (FileExists("missions/farewell_chenming.txt", true))
+		{
+			menu.AddItem("D5", "DLC: Farewell Chenming");
+		}
+		if (FileExists("missions/behind.txt", true))
+		{
+			menu.AddItem("D7", "DLC: Left Behind");
+		}
+		if (FileExists("missions/precinct84.txt", true))
+		{
+			menu.AddItem("D8", "DLC: Precinct 84");
+		}
+		if (FileExists("missions/suicideblitz2.txt", true))
+		{
+			menu.AddItem("D9", "DLC: Suicide Blitz 2");
+		}
+		if (FileExists("missions/l4d2_thebloodymoors.txt", true))
+		{
+			menu.AddItem("D10", "DLC: The Bloody Moors");
+		}
+		if (FileExists("missions/tot.txt", true))
+		{
+			menu.AddItem("D11", "DLC: Tour of Terror");
+		}
+		if (FileExists("missions/urbanflight.txt", true))
+		{
+			menu.AddItem("D12", "DLC: Urban Flight");
+		}
+		if (FileExists("missions/ravenholmwarmission2.txt", true))
+		{
+			menu.AddItem("D13", "DLC: We Don't Go To Ravenholm");
+		}
+		if (FileExists("missions/yama.txt", true))
+		{
+			menu.AddItem("D14", "DLC: Yama");
+		}
 		menu.ExitBackButton = true;
 		menu.Display(client, 30);
 	}
@@ -91,74 +273,6 @@ public Action Cmd_AMenuMaps(int client, int args)
 		menu.AddItem("11", "11. Dead Air");
 		menu.AddItem("12", "12. Blood Harvest");
 		menu.AddItem("13", "13. The Last Stand");
-		menu.ExitBackButton = true;
-		menu.Display(client, 30);
-	}
-	return Plugin_Handled;
-}
-
-public Action Cmd_AMenuMapsDlc(int client, int args)
-{
-	char mode[32];
-	ConVar g_Mode = FindConVar("mp_gamemode");
-	GetConVarString(g_Mode, mode, sizeof(mode));
-	if (strcmp(mode, "coop") || strcmp(mode, "realism") || strcmp(mode, "versus")  == 0)
-	{
-		Menu menu = new Menu(MenuHandlerCoopDLC);
-		menu.SetTitle("Maps");
-		menu.AddItem("1", "1. Back To School");
-		menu.AddItem("2", "2. Blackout Basement");
-		menu.AddItem("3", "3. Blood Proof");
-		menu.AddItem("4", "4. City 17");
-		menu.AddItem("5", "5. Chernobyl: Chapter One");
-		menu.AddItem("6", "6. Dam it 2! The Director's Cut");
-		menu.AddItem("7", "7. Dam It [Remastered]");
-		menu.AddItem("8", "8. Dark Wood (Extended)");
-		menu.AddItem("9", "9. Dead Before Dawn (Extended)");
-		menu.AddItem("10", "10. Dead City II");
-		menu.AddItem("11", "11. Deadbeat Escape");
-		menu.AddItem("12", "12. Death Row");
-		menu.AddItem("13", "13. Death Strip");
-		menu.AddItem("14", "14. Devil Mountain");
-		menu.AddItem("15", "15. Diescraper Redux");
-		menu.AddItem("16", "16. Fall in Death");
-		menu.AddItem("17", "17. Farewell Chenming");
-		menu.AddItem("18", "18. Fatal Freight");
-		menu.AddItem("19", "19. I Hate Mountains");
-		menu.AddItem("20", "20. Left Behind");
-		menu.AddItem("21", "21. Our Mutual Fiend");
-		menu.AddItem("22", "22. Plan B");
-		menu.AddItem("23", "23. Precinct 84");
-		menu.AddItem("24", "24. RedemptionII");
-		menu.AddItem("25", "25. Suicide Blitz 2");
-		menu.AddItem("26", "26. The Bloody Moors");
-		menu.AddItem("27", "27. Tour of Terror");
-		menu.AddItem("28", "28. Urban Flight");
-		menu.AddItem("29", "29. Vienna Calling 1");
-		menu.AddItem("30", "30. Warcelona");
-		menu.AddItem("31", "31. We Don't Go To Ravenholm");
-		menu.AddItem("32", "32. Yama");
-		menu.ExitBackButton = true;
-		menu.Display(client, 30);
-	}
-	if (strcmp(mode, "survival")  == 0)
-	{
-		Menu menu = new Menu(MenuHandlerSurvivalDLC);
-		menu.SetTitle("Maps");
-		menu.AddItem("1", "1. Dark Wood (Extended)");
-		menu.AddItem("2", "2. Devil Mountain");
-		menu.AddItem("3", "3. Diescraper Redux");
-		menu.AddItem("4", "4. Fall in Death");
-		menu.AddItem("5", "5. Farewell Chenming");
-		menu.AddItem("6", "6. Fatal Freight");
-		menu.AddItem("7", "7. Left Behind");
-		menu.AddItem("8", "8. Precinct 84");
-		menu.AddItem("9", "9. Suicide Blitz 2");
-		menu.AddItem("10", "10. The Bloody Moors");
-		menu.AddItem("11", "11. Tour of Terror");
-		menu.AddItem("12", "12. Urban Flight");
-		menu.AddItem("13", "13. We Don't Go To Ravenholm");
-		menu.AddItem("14", "14. Yama");
 		menu.ExitBackButton = true;
 		menu.Display(client, 30);
 	}
@@ -232,6 +346,126 @@ public int MenuHandlerCoop(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info, "14") == 0)
 			{
 				Campaign(param1, 14, 2);
+			}
+			if (strcmp(info, "D1") == 0)
+			{
+				CampaignDcl(param1, 1, 6);
+			}
+			if (strcmp(info, "D2") == 0)
+			{
+				CampaignDcl(param1, 2, 4);
+			}		
+			if (strcmp(info, "D3") == 0)
+			{
+				CampaignDcl(param1, 3, 3);
+			}
+			if (strcmp(info, "D4") == 0)
+			{
+				CampaignDcl(param1, 4, 5);
+			}
+			if (strcmp(info, "D5") == 0)
+			{
+				CampaignDcl(param1, 5, 5);
+			}
+			if (strcmp(info, "D6") == 0)
+			{
+				CampaignDcl(param1, 6, 4);
+			}
+			if (strcmp(info, "D7") == 0)
+			{
+				CampaignDcl(param1, 7, 3);
+			}
+			if (strcmp(info, "D8") == 0)
+			{
+				CampaignDcl(param1, 8, 5);
+			}
+			if (strcmp(info, "D9") == 0)
+			{
+				CampaignDcl(param1, 9, 6);
+			}
+			if (strcmp(info, "D10") == 0)
+			{
+				CampaignDcl(param1, 10, 6);
+			}
+			if (strcmp(info, "D11") == 0)
+			{
+				CampaignDcl(param1, 11, 4);
+			}
+			if (strcmp(info, "D12") == 0)
+			{
+				CampaignDcl(param1, 12, 4);
+			}
+			if (strcmp(info, "D13") == 0)
+			{
+				CampaignDcl(param1, 13, 6);
+			}
+			if (strcmp(info, "D14") == 0)
+			{
+				CampaignDcl(param1, 14, 5);
+			}
+			if (strcmp(info, "D15") == 0)
+			{
+				CampaignDcl(param1, 15, 4);
+			}
+			if (strcmp(info, "D16") == 0)
+			{
+				CampaignDcl(param1, 16, 4);
+			}
+			if (strcmp(info, "D17") == 0)
+			{
+				CampaignDcl(param1, 17, 4);
+			}
+			if (strcmp(info, "D19") == 0)
+			{
+				CampaignDcl(param1, 19, 5);
+			}
+			if (strcmp(info, "D20") == 0)
+			{
+				CampaignDcl(param1, 20, 4);
+			}
+			if (strcmp(info, "D22") == 0)
+			{
+				CampaignDcl(param1, 22, 3);
+			}
+			if (strcmp(info, "D23") == 0)
+			{
+				CampaignDcl(param1, 23, 4);
+			}
+			if (strcmp(info, "D24") == 0)
+			{
+				CampaignDcl(param1, 24, 5);
+			}
+			if (strcmp(info, "D25") == 0)
+			{
+				CampaignDcl(param1, 25, 5);
+			}
+			if (strcmp(info, "D26") == 0)
+			{
+				CampaignDcl(param1, 26, 5);
+			}
+			if (strcmp(info, "D27") == 0)
+			{
+				CampaignDcl(param1, 27, 5);
+			}
+			if (strcmp(info, "D28") == 0)
+			{
+				CampaignDcl(param1, 28, 4);
+			}
+			if (strcmp(info, "D29") == 0)
+			{
+				CampaignDcl(param1, 29, 5);
+			}
+			if (strcmp(info, "D30") == 0)
+			{
+				CampaignDcl(param1, 30, 4);
+			}
+			if (strcmp(info, "D31") == 0)
+			{
+				CampaignDcl(param1, 31, 4);
+			}
+			if (strcmp(info, "D32") == 0)
+			{
+				CampaignDcl(param1, 32, 5);
 			}
 		}
 	}
@@ -450,6 +684,58 @@ public int MenuHandlerSurvival(Menu menu, MenuAction action, int param1, int par
 			if (strcmp(info, "14") == 0)
 			{
 				CampaignSurvival(param1, 14, 2);
+			}
+			if (strcmp(info, "D1") == 0)
+			{
+				CampaignSurvivalDLC(param1, 1, 1);
+			}
+			if (strcmp(info, "D2") == 0)
+			{
+				CampaignSurvivalDLC(param1, 2, 2);
+			}		
+			if (strcmp(info, "D3") == 0)
+			{
+				CampaignSurvivalDLC(param1, 3, 2);
+			}
+			if (strcmp(info, "D4") == 0)
+			{
+				CampaignSurvivalDLC(param1, 4, 2);
+			}
+			if (strcmp(info, "D5") == 0)
+			{
+				CampaignSurvivalDLC(param1, 5, 1);
+			}
+			if (strcmp(info, "D7") == 0)
+			{
+				CampaignSurvivalDLC(param1, 7, 1);
+			}
+			if (strcmp(info, "D8") == 0)
+			{
+				CampaignSurvivalDLC(param1, 8, 1);
+			}
+			if (strcmp(info, "D9") == 0)
+			{
+				CampaignSurvivalDLC(param1, 9, 3);
+			}
+			if (strcmp(info, "D10") == 0)
+			{
+				CampaignSurvivalDLC(param1, 10, 5);
+			}
+			if (strcmp(info, "D11") == 0)
+			{
+				CampaignSurvivalDLC(param1, 11, 4);
+			}
+			if (strcmp(info, "D12") == 0)
+			{
+				CampaignSurvivalDLC(param1, 12, 2);
+			}
+			if (strcmp(info, "D13") == 0)
+			{
+				CampaignSurvivalDLC(param1, 13, 2);
+			}
+			if (strcmp(info, "D14") == 0)
+			{
+				CampaignSurvivalDLC(param1, 14, 3);
 			}
 		}
 	}
@@ -798,150 +1084,6 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 	}
 }
 
-public int MenuHandlerCoopDLC(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			GetMenuItem(menu, param2, info, sizeof(info));
-			if (strcmp(info, "1") == 0)
-			{
-				CampaignDcl(param1, 1, 6);
-			}
-			if (strcmp(info, "2") == 0)
-			{
-				CampaignDcl(param1, 2, 4);
-			}		
-			if (strcmp(info, "3") == 0)
-			{
-				CampaignDcl(param1, 3, 3);
-			}
-			if (strcmp(info, "4") == 0)
-			{
-				CampaignDcl(param1, 4, 5);
-			}
-			if (strcmp(info, "5") == 0)
-			{
-				CampaignDcl(param1, 5, 5);
-			}
-			if (strcmp(info, "6") == 0)
-			{
-				CampaignDcl(param1, 6, 4);
-			}
-			if (strcmp(info, "7") == 0)
-			{
-				CampaignDcl(param1, 7, 3);
-			}
-			if (strcmp(info, "8") == 0)
-			{
-				CampaignDcl(param1, 8, 5);
-			}
-			if (strcmp(info, "9") == 0)
-			{
-				CampaignDcl(param1, 9, 6);
-			}
-			if (strcmp(info, "10") == 0)
-			{
-				CampaignDcl(param1, 10, 6);
-			}
-			if (strcmp(info, "11") == 0)
-			{
-				CampaignDcl(param1, 11, 4);
-			}
-			if (strcmp(info, "12") == 0)
-			{
-				CampaignDcl(param1, 12, 4);
-			}
-			if (strcmp(info, "13") == 0)
-			{
-				CampaignDcl(param1, 13, 6);
-			}
-			if (strcmp(info, "14") == 0)
-			{
-				CampaignDcl(param1, 14, 5);
-			}
-			if (strcmp(info, "15") == 0)
-			{
-				CampaignDcl(param1, 15, 4);
-			}
-			if (strcmp(info, "16") == 0)
-			{
-				CampaignDcl(param1, 16, 4);
-			}
-			if (strcmp(info, "17") == 0)
-			{
-				CampaignDcl(param1, 17, 4);
-			}
-			if (strcmp(info, "18") == 0)
-			{
-				CampaignDcl(param1, 18, 5);
-			}
-			if (strcmp(info, "19") == 0)
-			{
-				CampaignDcl(param1, 19, 5);
-			}
-			if (strcmp(info, "20") == 0)
-			{
-				CampaignDcl(param1, 20, 4);
-			}
-			if (strcmp(info, "21") == 0)
-			{
-				CampaignDcl(param1, 21, 3);
-			}
-			if (strcmp(info, "22") == 0)
-			{
-				CampaignDcl(param1, 22, 3);
-			}
-			if (strcmp(info, "23") == 0)
-			{
-				CampaignDcl(param1, 23, 4);
-			}
-			if (strcmp(info, "24") == 0)
-			{
-				CampaignDcl(param1, 24, 5);
-			}
-			if (strcmp(info, "25") == 0)
-			{
-				CampaignDcl(param1, 25, 5);
-			}
-			if (strcmp(info, "26") == 0)
-			{
-				CampaignDcl(param1, 26, 5);
-			}
-			if (strcmp(info, "27") == 0)
-			{
-				CampaignDcl(param1, 27, 5);
-			}
-			if (strcmp(info, "28") == 0)
-			{
-				CampaignDcl(param1, 28, 4);
-			}
-			if (strcmp(info, "29") == 0)
-			{
-				CampaignDcl(param1, 29, 5);
-			}
-			if (strcmp(info, "30") == 0)
-			{
-				CampaignDcl(param1, 30, 4);
-			}
-			if (strcmp(info, "31") == 0)
-			{
-				CampaignDcl(param1, 31, 4);
-			}
-			if (strcmp(info, "32") == 0)
-			{
-				CampaignDcl(param1, 32, 5);
-			}
-		}
-	}
-}
-
 public Action CampaignDcl(int client, int campaigns, int maps)
 {
 	switch (campaigns)
@@ -1250,78 +1392,6 @@ public Action CampaignDcl(int client, int campaigns, int maps)
 	menu.ExitButton = false;
 	menu.Display(client, 30);
 	return Plugin_Handled;
-}
-
-public int MenuHandlerSurvivalDLC(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			if (strcmp(info, "1") == 0)
-			{
-				CampaignSurvivalDLC(param1, 1, 1);
-			}
-			if (strcmp(info, "2") == 0)
-			{
-				CampaignSurvivalDLC(param1, 2, 2);
-			}		
-			if (strcmp(info, "3") == 0)
-			{
-				CampaignSurvivalDLC(param1, 3, 2);
-			}
-			if (strcmp(info, "4") == 0)
-			{
-				CampaignSurvivalDLC(param1, 4, 2);
-			}
-			if (strcmp(info, "5") == 0)
-			{
-				CampaignSurvivalDLC(param1, 5, 1);
-			}
-			if (strcmp(info, "6") == 0)
-			{
-				CampaignSurvivalDLC(param1, 6, 3);
-			}
-			if (strcmp(info, "7") == 0)
-			{
-				CampaignSurvivalDLC(param1, 7, 1);
-			}
-			if (strcmp(info, "8") == 0)
-			{
-				CampaignSurvivalDLC(param1, 8, 1);
-			}
-			if (strcmp(info, "9") == 0)
-			{
-				CampaignSurvivalDLC(param1, 9, 3);
-			}
-			if (strcmp(info, "10") == 0)
-			{
-				CampaignSurvivalDLC(param1, 10, 5);
-			}
-			if (strcmp(info, "11") == 0)
-			{
-				CampaignSurvivalDLC(param1, 11, 4);
-			}
-			if (strcmp(info, "12") == 0)
-			{
-				CampaignSurvivalDLC(param1, 12, 2);
-			}
-			if (strcmp(info, "13") == 0)
-			{
-				CampaignSurvivalDLC(param1, 13, 2);
-			}
-			if (strcmp(info, "14") == 0)
-			{
-				CampaignSurvivalDLC(param1, 14, 3);
-			}
-		}
-	}
 }
 
 public Action CampaignSurvivalDLC(int client, int campaigns, int maps)
