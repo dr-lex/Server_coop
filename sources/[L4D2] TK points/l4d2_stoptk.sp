@@ -27,7 +27,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	CreateConVar("l4d_tk_stop_version", PLUGIN_VERSION, "Gear Transfer plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
+	CreateConVar("l4d_tk_stop_version", PLUGIN_VERSION, "TK points plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
 	
 	RegConsoleCmd("sm_tk", CMD_Tk);
 	
