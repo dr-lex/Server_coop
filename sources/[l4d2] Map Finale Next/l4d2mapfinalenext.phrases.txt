@@ -1,0 +1,41 @@
+"Phrases"
+{
+	"Next campaign"
+	{
+		"en"			"Next campaign"
+		"ru"			"Следующая кампания"
+	}
+
+	"Mission failed 1 of 2 times"
+	{
+		"#format"		"{1:d},{2:d}"
+		"en"			"Mission failed {1} of {2} times"
+		"ru"			"Миссия провалена {1} из {2} раз"
+	}
+	
+	"The mission will start in"
+	{
+		"#format"		"{1:i}"
+		"en"			"The mission will start in {1} seconds!"
+		"ru"			"Игра начнется через {1} секунд(ы)!"
+	}
+	
+	"Start of the mission"
+	{
+		"en"			"Start of the mission!"
+		"ru"			"Начало миссии!"
+	}
+	
+	"The mission begins!"
+	{
+		"en"			"The mission begins!"
+		"ru"			"Миссия начинается!"
+	}
+	
+	"Change campaign through"
+	{
+		"#format"		"{1:i}"
+		"en"			"Change campaign through {1} seconds!"
+		"ru"			"Смена кампании через {1} секунд(ы)!"
+	}
+}
