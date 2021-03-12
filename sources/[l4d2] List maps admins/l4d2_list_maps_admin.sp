@@ -2,6 +2,11 @@
 #include <sdktools>
 #pragma newdecls required
 
+#define HX_FIXES_LUX 1
+#if HX_FIXES_LUX
+#include <l4d2_changelevel>
+#endif
+
 char m1[40];
 char m2[40];
 char m3[40];
@@ -17,8 +22,8 @@ public Plugin myinfo =
 	name = "[l4d2] List maps admins",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "",
-	version = "1.2",
-	url = ""
+	version = "1.2.2",
+	url = "https://forums.alliedmods.net/showthread.php?p=2736182"
 };
 
 public void OnPluginStart()
@@ -128,6 +133,10 @@ public Action Cmd_AMenuMaps(int client, int args)
 		{
 			menu.AddItem("D17", "DLC: Farewell Chenming");
 		}
+		if (FileExists("missions/highway.txt", true))
+		{
+			menu.AddItem("D33", "DLC: Highway To Hell");
+		}
 		if (FileExists("missions/ihatemountains.txt", true))
 		{
 			menu.AddItem("D19", "DLC: I Hate Mountains");
@@ -135,6 +144,10 @@ public Action Cmd_AMenuMaps(int client, int args)
 		if (FileExists("missions/behind.txt", true))
 		{
 			menu.AddItem("D20", "DLC: Left Behind");
+		}
+		if (FileExists("missions/lockdown.txt", true))
+		{
+			menu.AddItem("D35", "DLC: Lockdown");
 		}
 		if (FileExists("missions/l4d2_planb_v051.txt", true))
 		{
@@ -167,6 +180,10 @@ public Action Cmd_AMenuMaps(int client, int args)
 		if (FileExists("missions/viennacalling.txt", true))
 		{
 			menu.AddItem("D29", "DLC: Vienna Calling 1");
+		}
+		if (FileExists("missions/viennacalling2.txt", true))
+		{
+			menu.AddItem("D34", "DLC: Vienna Calling 2");
 		}
 		if (FileExists("missions/warcelona.txt", true))
 		{
@@ -466,6 +483,18 @@ public int MenuHandlerCoop(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info, "D32") == 0)
 			{
 				CampaignDcl(param1, 32, 5);
+			}
+			if (strcmp(info, "D33") == 0)
+			{
+				CampaignDcl(param1, 33, 5);
+			}
+			if (strcmp(info, "D34") == 0)
+			{
+				CampaignDcl(param1, 34, 6);
+			}
+			if (strcmp(info, "D35") == 0)
+			{
+				CampaignDcl(param1, 35, 5);
 			}
 		}
 	}
@@ -1051,27 +1080,51 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			GetMenuItem(menu, param2, info, sizeof(info));
 			if (strcmp(info,"1") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m1);
+			#else
 				ServerCommand("changelevel %s", m1);
+			#endif
 			}
 			if (strcmp(info,"2") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m2);
+			#else
 				ServerCommand("changelevel %s", m2);
+			#endif
 			}
 			if (strcmp(info,"3") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m3);
+			#else
 				ServerCommand("changelevel %s", m3);
+			#endif
 			}
 			if (strcmp(info,"4") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m4);
+			#else
 				ServerCommand("changelevel %s", m4);
+			#endif
 			}
 			if (strcmp(info,"5") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m5);
+			#else
 				ServerCommand("changelevel %s", m5);
+			#endif
 			}
 			if (strcmp(info,"6") == 0)
 			{
+			#if HX_FIXES_LUX
+				L4D2_ChangeLevel(m6);
+			#else
 				ServerCommand("changelevel %s", m6);
+			#endif
 			}
 		}
 		case MenuAction_Cancel:
@@ -1359,6 +1412,34 @@ public Action CampaignDcl(int client, int campaigns, int maps)
 			m3 = "l4d_yama_3";
 			m4 = "l4d_yama_4";
 			m5 = "l4d_yama_5";
+		}
+		case 33:
+		{
+			sName = "Highway To Hell";
+			m1 = "highway01_apt_20130613";
+			m2 = "highway02_megamart_20130613";
+			m3 = "highway03_hood01_20130614";
+			m4 = "highway04_afb_a_02_20130616";
+			m5 = "highway05_afb02_20130820";
+		}
+		case 34:
+		{
+			sName = "Vienna Calling 2";
+			m1 = "l4d_viennacalling2_1";
+			m2 = "l4d_viennacalling2_2";
+			m3 = "l4d_viennacalling2_3";
+			m4 = "l4d_viennacalling2_4";
+			m5 = "l4d_viennacalling2_5";
+			m6 = "l4d_viennacalling2_finale";
+		}
+		case 35:
+		{
+			sName = "Lockdown";
+			m1 = "bt1";
+			m2 = "bt2";
+			m3 = "bt3";
+			m4 = "bt4";
+			m5 = "bt5";
 		}
 	}
 	
