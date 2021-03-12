@@ -1,13 +1,18 @@
 #include <sourcemod>
 #pragma newdecls required
 
+#define HX_FIXES_LUX 1
+#if HX_FIXES_LUX
+#include <l4d2_changelevel>
+#endif
+
 char sg_Map[54];
 int round_end_repeats;
-int round_start;
+//int round_start;
 int IsRoundStarted = 0;
 char NextCampaignVote[32];
 int seconds;
-int seconds2;
+//int seconds2;
 char NextCampaign[53];
 
 public Plugin myinfo = 
@@ -15,7 +20,7 @@ public Plugin myinfo =
 	name = "[l4d2] Map Finale Next",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Rotation of companies in the list, full loading of players when changing cards",
-	version = "2.7.2",
+	version = "2.7.5",
 	url = ""
 };
 
@@ -114,13 +119,13 @@ public void OnMapStart()
 	round_end_repeats = 0;
 	seconds = 5;
 	
-	round_start = 1;
-	seconds2 = 30;
+	//round_start = 1;
+	//seconds2 = 30;
 	
-	CreateTimer(1.0, TimerRoundEnd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
+	//CreateTimer(1.0, TimerRoundEnd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action TimerRoundEnd(Handle timer)
+stock Action TimerRoundEnd(Handle timer)
 {
 	PrintHintTextToAll("%t", "The mission will start in", seconds2);
 	if (seconds2 <= 0)
@@ -133,7 +138,7 @@ public Action TimerRoundEnd(Handle timer)
 	return Plugin_Continue;
 }
 
-public void HxFakeCHEATDev(char[] sCmd)
+stock void HxFakeCHEATDev(char[] sCmd)
 {
 	int iFlags = GetCommandFlags(sCmd);
 	SetCommandFlags(sCmd, iFlags & ~(FCVAR_CHEAT|FCVAR_DEVELOPMENTONLY));
@@ -196,14 +201,14 @@ public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 		return;
 	}
 	
-	if (round_start)
-	{
-		round_start = 0;
-	}
-	else
-	{
-		round_end_repeats++;
-	}
+	//if (round_start)
+	//{
+	//	round_start = 0;
+	//}
+	//else
+	//{
+	round_end_repeats++;
+	//}
 }
 
 public void ChangeCampaignEx()
@@ -212,63 +217,123 @@ public void ChangeCampaignEx()
 	
 	if (StrEqual(NextCampaignVote, "L4D2C1", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c1m1_hotel");
+	#else
 		ServerCommand("changelevel c1m1_hotel");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C2", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c2m1_highway");
+	#else
 		ServerCommand("changelevel c2m1_highway");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C3", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c3m1_plankcountry");
+	#else
 		ServerCommand("changelevel c3m1_plankcountry");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C4", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c4m1_milltown_a");
+	#else
 		ServerCommand("changelevel c4m1_milltown_a");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C5", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c5m1_waterfront");
+	#else
 		ServerCommand("changelevel c5m1_waterfront");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C6", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c6m1_riverbank");
+	#else
 		ServerCommand("changelevel c6m1_riverbank");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C7", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c7m1_docks");
+	#else
 		ServerCommand("changelevel c7m1_docks");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C8", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c8m1_apartment");
+	#else
 		ServerCommand("changelevel c8m1_apartment");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C9", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c9m1_alleys");
+	#else
 		ServerCommand("changelevel c9m1_alleys");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C10", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c10m1_caves");
+	#else
 		ServerCommand("changelevel c10m1_caves");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C11", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c11m1_greenhouse");
+	#else
 		ServerCommand("changelevel c11m1_greenhouse");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C12", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c12m1_hilltop");
+	#else
 		ServerCommand("changelevel c12m1_hilltop");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C13", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c13m1_alpinecreek");
+	#else
 		ServerCommand("changelevel c13m1_alpinecreek");
+	#endif
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C14", false))
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c14m1_junkyard");
+	#else
 		ServerCommand("changelevel c14m1_junkyard");
+	#endif
 	}
 	else
 	{
+	#if HX_FIXES_LUX
+		L4D2_ChangeLevel("c1m1_hotel");
+	#else
 		ServerCommand("changelevel c1m1_hotel");
+	#endif
 	}
 }
 
