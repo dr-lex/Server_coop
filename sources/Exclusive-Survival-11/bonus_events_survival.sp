@@ -5,7 +5,6 @@
 
 int ig_start_map[MAXPLAYERS+1];
 int ig_iTimer;
-int ig_iTimerFix;
 
 #define SOUND_BLIP "level/bell_impact.wav"
 
@@ -21,7 +20,7 @@ public Plugin myinfo =
 	name = "L4D2 Bonus Events",
 	author = "dr lex (Exclusive Survival-11)",
 	description = "Gives rewards for completing assignments",
-	version = "1.2.1",
+	version = "1.2.2",
 	url = ""
 }
 
@@ -44,7 +43,6 @@ public void OnConfigsExecuted()
 public void OnMapStart()
 {
 	ig_iTimer = 0;
-	ig_iTimerFix = 0;
 	GetCurrentMap(sMap, 54);
 }
 
@@ -62,12 +60,29 @@ public void OnClientDisconnect(int client)
 	{
 		ig_start_map[client] = 0;
 	}
+	
+	int iCount;
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && !IsFakeClient(i))
+		{
+			iCount++;
+		}
+	}
+	
+	if (iCount == 0)
+	{
+		if (Timers != null)
+		{
+			delete Timers;
+			Timers = null;
+		}
+	}
 }
 
 public void Event_SurvRoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	ig_iTimer = 0;
-	ig_iTimerFix = 1;
 	
 	int i = 1;
 	while (i <= MaxClients)
@@ -81,14 +96,10 @@ public void Event_SurvRoundStart(Event event, const char[] name, bool dontBroadc
 
 public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
-	if (ig_iTimerFix)
+	if (Timers != null)
 	{
-		ig_iTimerFix = 0;
-		if (Timers != null)
-		{
-			delete Timers;
-			Timers = null;
-		}
+		delete Timers;
+		Timers = null;
 	}
 	
 	int i = 1;
@@ -137,9 +148,7 @@ public Action Timer_Medal(Handle timer)
 			Medal4(i);
 			i += 1;
 		}
-	}
-	if (ig_iTimer == 31)
-	{
+		
 		if (Timers != null)
 		{
 			delete Timers;
