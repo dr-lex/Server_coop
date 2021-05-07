@@ -8,11 +8,9 @@
 
 char sg_Map[54];
 int round_end_repeats;
-//int round_start;
 int IsRoundStarted = 0;
 char NextCampaignVote[32];
 int seconds;
-//int seconds2;
 char NextCampaign[53];
 
 public Plugin myinfo = 
@@ -20,7 +18,7 @@ public Plugin myinfo =
 	name = "[l4d2] Map Finale Next",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Rotation of companies in the list, full loading of players when changing cards",
-	version = "2.7.5",
+	version = "2.7.6",
 	url = ""
 };
 
@@ -34,7 +32,7 @@ public void OnPluginStart()
 	HookEvent("round_end", Event_RoundEnd);
 }
 
-int NextMission()
+stock int NextMission()
 {
 	if (StrEqual(sg_Map, "c1m1_hotel", false) || StrEqual(sg_Map, "c1m2_streets", false) || StrEqual(sg_Map, "c1m3_mall", false) || StrEqual(sg_Map, "c1m4_atrium", false))
 	{
@@ -118,33 +116,6 @@ public void OnMapStart()
 	GetCurrentMap(sg_Map, sizeof(sg_Map)-1);
 	round_end_repeats = 0;
 	seconds = 5;
-	
-	//round_start = 1;
-	//seconds2 = 30;
-	
-	//CreateTimer(1.0, TimerRoundEnd, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
-}
-
-stock Action TimerRoundEnd(Handle timer)
-{
-	PrintHintTextToAll("%t", "The mission will start in", seconds2);
-	if (seconds2 <= 0)
-	{
-		PrintHintTextToAll("%t", "Start of the mission");
-		HxFakeCHEATDev("scenario_end");
-		return Plugin_Stop;
-	}
-	seconds2--;
-	return Plugin_Continue;
-}
-
-stock void HxFakeCHEATDev(char[] sCmd)
-{
-	int iFlags = GetCommandFlags(sCmd);
-	SetCommandFlags(sCmd, iFlags & ~(FCVAR_CHEAT|FCVAR_DEVELOPMENTONLY));
-	ServerCommand("%s", sCmd);
-	ServerExecute();
-	SetCommandFlags(sCmd, iFlags);
 }
 
 public Action Event_FinalWin(Event event, const char[] name, bool dontBroadcast)
@@ -201,14 +172,7 @@ public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 		return;
 	}
 	
-	//if (round_start)
-	//{
-	//	round_start = 0;
-	//}
-	//else
-	//{
 	round_end_repeats++;
-	//}
 }
 
 public void ChangeCampaignEx()
