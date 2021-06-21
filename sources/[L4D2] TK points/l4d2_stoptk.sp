@@ -14,7 +14,7 @@ int ig_time_wp_turbo[MAXPLAYERS+1];
 int ig_time_nospam[MAXPLAYERS+1];
 
 bool g_bLeft4Dead2;
-#define PLUGIN_VERSION "1.6"
+#define PLUGIN_VERSION "1.6.3b"
 
 public Plugin myinfo = 
 {
@@ -36,7 +36,7 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("heal_success", Event_HealSuccess);
 	HookEvent("revive_success", Event_ReviveSuccess);
-	if(g_bLeft4Dead2)
+	if (g_bLeft4Dead2)
 	{
 		HookEvent("defibrillator_used", Event_DefibrillatorUsed);
 	}
@@ -247,12 +247,17 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 									ig_TKPoints[iAttacker] += 0.005;
 								}
 								
+								if (event.GetInt("type") & 64)
+								{
+									ig_TKPoints[iAttacker] += 0.001;
+								}
+								
 								if (ig_time_nospam[iAttacker] < GetTime())
 								{
 									ig_time_nospam[iAttacker] = GetTime() + 3;
 
 									DataPack hPack;
-									CreateDataTimer(3.0, TK_MSG, hPack, TIMER_FLAG_NO_MAPCHANGE);
+									CreateDataTimer(5.0, TK_MSG, hPack, TIMER_DATA_HNDL_CLOSE|TIMER_FLAG_NO_MAPCHANGE);
 									hPack.WriteCell(iAttacker);
 									hPack.WriteCell(iUserid);
 								}
@@ -273,6 +278,7 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 
 public Action TK_MSG(Handle timer, Handle hDataPack)
 {
+	// Преобразуем Handle в DataPack
 	DataPack hPack = view_as<DataPack>(hDataPack);
 	hPack.Reset();
 	
@@ -351,10 +357,10 @@ public Action Event_PlayerIncap(Event event, const char[] name, bool dontBroadca
 
 public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
-	int iAttacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+	int iAttacker = GetClientOfUserId(event.GetInt("attacker"));
 	if (iAttacker)
 	{
-		int iUserid = GetClientOfUserId(GetEventInt(event, "userid"));
+		int iUserid = GetClientOfUserId(event.GetInt("userid"));
 		if (iUserid > 0)
 		{
 			if (!IsFakeClient(iAttacker))
@@ -517,8 +523,9 @@ stock void UpDateTKPoints(int client)
 			ig_TKPoints[client] = 0.0;
 			if (HxClientTimeBan(client))
 			{
-				PrintToChatAll("\x04[!tk]\x05 %d min ban:\x04 %N", 60*24, client);
-				KickClient(client, "%d Min ban.", 60*24);
+				PrintToChatAll("\x04[!tk]\x05 %d min ban:\x04 %N", 60*12, client);
+				KickClient(client, "%d Min ban.", 60*12);
+				LogMessage("TK-BAN (%N)", client);
 			}
 		}
 		
@@ -552,7 +559,7 @@ stock int HxClientTimeBan(int client)
 
 		hGM.JumpToKey(sTeamID, true);
 
-		int iTimeBan = GetTime() + 60*60*24;
+		int iTimeBan = GetTime() + 60*60*12;
 		
 		hGM.SetString("Name", sName);
 		hGM.SetNum("ban", iTimeBan);
