@@ -61,7 +61,7 @@ public Plugin myinfo =
 	name = "[L4D2] Backpack (!bk)",
 	author = "dr lex",
 	description = "",
-	version = "1.5.0",
+	version = "1.5.0a",
 	url = ""
 };
 
@@ -204,10 +204,9 @@ stock void SetPlayerReserveAmmo(int client, int weapon, int ammo)
 
 /* --------------------------------- */
 
-public void OnClientPostAdminCheck(int client)
+public void OnClientPutInServer(int client)
 {		/* При заходе игрока чистим рюкзак */
 	HxCleaning(client);
-	
 	if (!IsFakeClient(client))
 	{
 		CreateTimer(1.0, TimerClientPost, client, TIMER_FLAG_NO_MAPCHANGE);
@@ -256,9 +255,7 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 		HxCleaning(i);
 		i += 1;
 	}
-	
 	CreateTimer(1.2, HxTimerRS, _, TIMER_FLAG_NO_MAPCHANGE);
-	
 }
 
 public Action HxTimerRS(Handle timer)
