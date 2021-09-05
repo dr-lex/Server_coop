@@ -43,9 +43,9 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
+	#if defined _l4d2_changelevel_included
 	else
 	{
-	#if defined _l4d2_changelevel_included
 		if (PluginExists("l4d2_changelevel.smx"))
 		{
 			g_bChangeLevel = true;
@@ -54,8 +54,8 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		{
 			g_bChangeLevel = false;
 		}
-	#endif
 	}
+	#endif
 	return APLRes_Success;
 }
 
@@ -198,7 +198,6 @@ public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 	{
 		return;
 	}
-	
 	round_end_repeats++;
 }
 
