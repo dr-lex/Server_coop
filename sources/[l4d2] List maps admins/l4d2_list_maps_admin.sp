@@ -1,11 +1,12 @@
+#pragma semicolon 1
 #include <sourcemod>
+#include <adminmenu>
 #include <sdktools>
 #pragma newdecls required
 
-#define HX_FIXES_LUX 1
-#if HX_FIXES_LUX
-#include <l4d2_changelevel>
-#endif
+#tryinclude <l4d2_changelevel>
+
+TopMenu hTopMenuHandle;
 
 char m1[40];
 char m2[40];
@@ -17,18 +18,28 @@ char sName[120];
 
 char sBuffer[64];
 
+#if defined _l4d2_changelevel_included
+bool g_bChangeLevel;
+#endif
+
 public Plugin myinfo = 
 {
 	name = "[l4d2] List maps admins",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "",
-	version = "1.2.2",
+	version = "1.3.1",
 	url = "https://forums.alliedmods.net/showthread.php?p=2736182"
 };
 
 public void OnPluginStart()
 {
 	RegAdminCmd("sm_amaps", Cmd_AMenuMaps, ADMFLAG_UNBAN, "");
+	
+	TopMenu hTop_Menu;
+	if (LibraryExists("adminmenu") && ((hTop_Menu = GetAdminTopMenu()) != null))
+	{
+		OnAdminMenuReady(hTop_Menu);
+	}
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -39,7 +50,65 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
+#if defined _l4d2_changelevel_included
+	else
+	{
+		if (PluginExists("l4d2_changelevel.smx"))
+		{
+			g_bChangeLevel = true;
+		}
+		else
+		{
+			g_bChangeLevel = false;
+		}
+	}
+#endif
 	return APLRes_Success;
+}
+
+stock bool PluginExists(const char[] plugin_name)
+{
+	Handle iter = GetPluginIterator();
+	Handle plugin = null;
+	char name[64];
+
+	while (MorePlugins(iter))
+	{
+		plugin = ReadPlugin(iter);
+		GetPluginFilename(plugin, name, sizeof(name));
+		if (StrEqual(name, plugin_name))
+		{
+			delete iter;
+			return true;
+		}
+	}
+
+	delete iter;
+	return false;
+}
+
+public void OnAdminMenuReady(Handle topmenu)
+{
+	if (topmenu == hTopMenuHandle)
+	{
+		return;
+	}
+	
+	hTopMenuHandle = view_as<TopMenu>(topmenu);
+	TopMenuObject ServerCmdCategory = hTopMenuHandle.FindCategory(ADMINMENU_SERVERCOMMANDS);
+	if (ServerCmdCategory != INVALID_TOPMENUOBJECT)
+	{
+		hTopMenuHandle.AddItem("sm_amaps", AdminMenu_Maps, ServerCmdCategory, "sm_amaps", ADMFLAG_UNBAN);
+	}
+}
+
+public void AdminMenu_Maps(TopMenu Top_Menu, TopMenuAction action, TopMenuObject object_id, int param, char[] Buffer, int maxlength)
+{
+	switch (action)
+	{
+		case TopMenuAction_DisplayOption: Format(Buffer, maxlength, "List of Companies (Maps)");
+		case TopMenuAction_SelectOption: Cmd_AMenuMaps(param, 0);
+	}
 }
 
 public Action Cmd_AMenuMaps(int client, int args)
@@ -50,7 +119,7 @@ public Action Cmd_AMenuMaps(int client, int args)
 	if (strcmp(mode, "coop") || strcmp(mode, "realism") || strcmp(mode, "versus")  == 0)
 	{
 		Menu menu = new Menu(MenuHandlerCoop);
-		menu.SetTitle("Maps");
+		menu.SetTitle("List of Companies (Maps)");
 		menu.AddItem("1", "1. Dead Center");
 		menu.AddItem("6", "2. The Passing");
 		menu.AddItem("2", "3. Dark Carnival");
@@ -203,7 +272,7 @@ public Action Cmd_AMenuMaps(int client, int args)
 	if (strcmp(mode, "survival")  == 0)
 	{
 		Menu menu = new Menu(MenuHandlerSurvival);
-		menu.SetTitle("Maps");
+		menu.SetTitle("List of Companies (Maps)");
 		menu.AddItem("1", "1. Dead Center");
 		menu.AddItem("6", "2. The Passing");
 		menu.AddItem("2", "3. Dark Carnival");
@@ -276,7 +345,7 @@ public Action Cmd_AMenuMaps(int client, int args)
 	if (strcmp(mode, "scavenge")  == 0)
 	{
 		Menu menu = new Menu(MenuHandlerScavenge);
-		menu.SetTitle("Maps");
+		menu.SetTitle("List of Companies (Maps)");
 		menu.AddItem("1", "1. Dead Center");
 		menu.AddItem("6", "2. The Passing");
 		menu.AddItem("2", "3. Dark Carnival");
@@ -620,7 +689,7 @@ public Action Campaign(int client, int campaigns, int maps)
 	}
 	
 	Menu menu = new Menu(CampaignHandler);
-	menu.SetTitle("%s", sName);
+	menu.SetTitle("%s [Maps]", sName);
 	Format(sBuffer, sizeof(sBuffer)-1, "Start > %s", m1);
 	menu.AddItem("1", sBuffer);
 	Format(sBuffer, sizeof(sBuffer)-1, "Map #2: %s", m2);
@@ -876,7 +945,7 @@ public Action CampaignSurvival(int client, int campaigns, int maps)
 	}
 	
 	Menu menu = new Menu(CampaignHandler);
-	menu.SetTitle("%s", sName);
+	menu.SetTitle("%s [Maps]", sName);
 	Format(sBuffer, sizeof(sBuffer)-1, "Map: %s", m1);
 	menu.AddItem("1", sBuffer);
 	if (maps > 1)
@@ -1047,7 +1116,7 @@ public Action CampaignScavenge(int client, int campaigns, int maps)
 	}
 	
 	Menu menu = new Menu(CampaignHandler);
-	menu.SetTitle("%s", sName);
+	menu.SetTitle("%s [Maps]", sName);
 	Format(sBuffer, sizeof(sBuffer)-1, "Map: %s", m1);
 	menu.AddItem("1", sBuffer);
 	if (maps > 1)
@@ -1080,48 +1149,90 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			GetMenuItem(menu, param2, info, sizeof(info));
 			if (strcmp(info,"1") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m1);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m1);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m1);
+				}
 			#else
 				ServerCommand("changelevel %s", m1);
 			#endif
 			}
 			if (strcmp(info,"2") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m2);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m2);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m2);
+				}
 			#else
 				ServerCommand("changelevel %s", m2);
 			#endif
 			}
 			if (strcmp(info,"3") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m3);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m3);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m3);
+				}
 			#else
 				ServerCommand("changelevel %s", m3);
 			#endif
 			}
 			if (strcmp(info,"4") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m4);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m4);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m4);
+				}
 			#else
 				ServerCommand("changelevel %s", m4);
 			#endif
 			}
 			if (strcmp(info,"5") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m5);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m5);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m5);
+				}
 			#else
 				ServerCommand("changelevel %s", m5);
 			#endif
 			}
 			if (strcmp(info,"6") == 0)
 			{
-			#if HX_FIXES_LUX
-				L4D2_ChangeLevel(m6);
+			#if defined _l4d2_changelevel_included
+				if (g_bChangeLevel)
+				{
+					L4D2_ChangeLevel(m6);
+				}
+				else
+				{
+					ServerCommand("changelevel %s", m6);
+				}
 			#else
 				ServerCommand("changelevel %s", m6);
 			#endif
@@ -1444,7 +1555,7 @@ public Action CampaignDcl(int client, int campaigns, int maps)
 	}
 	
 	Menu menu = new Menu(CampaignHandler);
-	menu.SetTitle("%s", sName);
+	menu.SetTitle("%s [Maps]", sName);
 	Format(sBuffer, sizeof(sBuffer)-1, "Start > %s", m1);
 	menu.AddItem("1", sBuffer);
 	Format(sBuffer, sizeof(sBuffer)-1, "Map #2: %s", m2);
@@ -1570,7 +1681,7 @@ public Action CampaignSurvivalDLC(int client, int campaigns, int maps)
 	}
 	
 	Menu menu = new Menu(CampaignHandler);
-	menu.SetTitle("%s", sName);
+	menu.SetTitle("%s [Maps]", sName);
 	Format(sBuffer, sizeof(sBuffer)-1, "Map: %s", m1);
 	menu.AddItem("1", sBuffer);
 	if (maps > 1)
