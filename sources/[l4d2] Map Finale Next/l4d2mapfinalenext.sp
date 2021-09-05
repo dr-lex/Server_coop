@@ -1,10 +1,7 @@
 #include <sourcemod>
 #pragma newdecls required
 
-#define HX_FIXES_LUX 1
-#if HX_FIXES_LUX
-#include <l4d2_changelevel>
-#endif
+#tryinclude <l4d2_changelevel>
 
 char sg_Map[54];
 int round_end_repeats;
@@ -13,12 +10,18 @@ char NextCampaignVote[32];
 int seconds;
 char NextCampaign[53];
 
+#if defined _l4d2_changelevel_included
+bool g_bChangeLevel;
+#endif
+
+char sMapName[40];
+
 public Plugin myinfo = 
 {
 	name = "[l4d2] Map Finale Next",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Rotation of companies in the list, full loading of players when changing cards",
-	version = "2.7.6",
+	version = "2.8.0",
 	url = ""
 };
 
@@ -30,6 +33,30 @@ public void OnPluginStart()
 	HookEvent("finale_win", Event_FinalWin);
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("round_end", Event_RoundEnd);
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	EngineVersion test = GetEngineVersion();
+	if (test != Engine_Left4Dead2)
+	{
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
+		return APLRes_SilentFailure;
+	}
+	else
+	{
+	#if defined _l4d2_changelevel_included
+		if (PluginExists("l4d2_changelevel.smx"))
+		{
+			g_bChangeLevel = true;
+		}
+		else
+		{
+			g_bChangeLevel = false;
+		}
+	#endif
+	}
+	return APLRes_Success;
 }
 
 stock int NextMission()
@@ -178,130 +205,82 @@ public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 public void ChangeCampaignEx()
 {
 	NextMission();
-	
 	if (StrEqual(NextCampaignVote, "L4D2C1", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c1m1_hotel");
-	#else
-		ServerCommand("changelevel c1m1_hotel");
-	#endif
+		sMapName = "c1m1_hotel";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C2", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c2m1_highway");
-	#else
-		ServerCommand("changelevel c2m1_highway");
-	#endif
+		sMapName = "c2m1_highway";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C3", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c3m1_plankcountry");
-	#else
-		ServerCommand("changelevel c3m1_plankcountry");
-	#endif
+		sMapName = "c3m1_plankcountry";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C4", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c4m1_milltown_a");
-	#else
-		ServerCommand("changelevel c4m1_milltown_a");
-	#endif
+		sMapName = "c4m1_milltown_a";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C5", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c5m1_waterfront");
-	#else
-		ServerCommand("changelevel c5m1_waterfront");
-	#endif
+		sMapName = "c5m1_waterfront";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C6", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c6m1_riverbank");
-	#else
-		ServerCommand("changelevel c6m1_riverbank");
-	#endif
+		sMapName = "c6m1_riverbank";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C7", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c7m1_docks");
-	#else
-		ServerCommand("changelevel c7m1_docks");
-	#endif
+		sMapName = "c7m1_docks";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C8", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c8m1_apartment");
-	#else
-		ServerCommand("changelevel c8m1_apartment");
-	#endif
+		sMapName = "c8m1_apartment";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C9", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c9m1_alleys");
-	#else
-		ServerCommand("changelevel c9m1_alleys");
-	#endif
+		sMapName = "c9m1_alleys";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C10", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c10m1_caves");
-	#else
-		ServerCommand("changelevel c10m1_caves");
-	#endif
+		sMapName = "c10m1_caves";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C11", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c11m1_greenhouse");
-	#else
-		ServerCommand("changelevel c11m1_greenhouse");
-	#endif
+		sMapName = "c11m1_greenhouse";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C12", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c12m1_hilltop");
-	#else
-		ServerCommand("changelevel c12m1_hilltop");
-	#endif
+		sMapName = "c12m1_hilltop";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C13", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c13m1_alpinecreek");
-	#else
-		ServerCommand("changelevel c13m1_alpinecreek");
-	#endif
+		sMapName = "c13m1_alpinecreek";
 	}
 	else if (StrEqual(NextCampaignVote, "L4D2C14", false))
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c14m1_junkyard");
-	#else
-		ServerCommand("changelevel c14m1_junkyard");
-	#endif
+		sMapName = "c14m1_junkyard";
 	}
 	else
 	{
-	#if HX_FIXES_LUX
-		L4D2_ChangeLevel("c1m1_hotel");
-	#else
-		ServerCommand("changelevel c1m1_hotel");
-	#endif
+		sMapName = "c1m1_hotel";
 	}
+	
+#if defined _l4d2_changelevel_included
+	if (g_bChangeLevel)
+	{
+		L4D2_ChangeLevel(sMapName);
+	}
+	else
+	{
+		ServerCommand("changelevel %s", sMapName);
+	}
+#else
+	ServerCommand("changelevel %s", sMapName);
+#endif
 }
 
-void PrintNextCampaign(int client = 0)
+stock void PrintNextCampaign(int client = 0)
 {
 	NextMission();
 
@@ -323,4 +302,25 @@ public Action Command_Next(int client, int args)
 		PrintNextCampaign(client);
 	}
 	return Plugin_Handled;
+}
+
+stock bool PluginExists(const char[] plugin_name)
+{
+	Handle iter = GetPluginIterator();
+	Handle plugin = null;
+	char name[64];
+
+	while (MorePlugins(iter))
+	{
+		plugin = ReadPlugin(iter);
+		GetPluginFilename(plugin, name, sizeof(name));
+		if (StrEqual(name, plugin_name))
+		{
+			delete iter;
+			return true;
+		}
+	}
+
+	delete iter;
+	return false;
 }
