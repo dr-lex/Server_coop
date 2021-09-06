@@ -13,8 +13,7 @@ int ig_time_wp[MAXPLAYERS+1];
 int ig_time_wp_turbo[MAXPLAYERS+1];
 int ig_time_nospam[MAXPLAYERS+1];
 
-bool g_bLeft4Dead2;
-#define PLUGIN_VERSION "1.6.3b"
+#define PLUGIN_VERSION "1.6.4"
 
 public Plugin myinfo = 
 {
@@ -27,8 +26,6 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	CreateConVar("l4d_tk_stop_version", PLUGIN_VERSION, "TK points plugin version.", FCVAR_NOTIFY|FCVAR_DONTRECORD);
-	
 	RegConsoleCmd("sm_tk", CMD_Tk);
 	
 	HookEvent("player_hurt", Event_PlayerHurt);
@@ -36,10 +33,7 @@ public void OnPluginStart()
 	HookEvent("player_death", Event_PlayerDeath);
 	HookEvent("heal_success", Event_HealSuccess);
 	HookEvent("revive_success", Event_ReviveSuccess);
-	if (g_bLeft4Dead2)
-	{
-		HookEvent("defibrillator_used", Event_DefibrillatorUsed);
-	}
+	HookEvent("defibrillator_used", Event_DefibrillatorUsed);
 	HookEvent("finale_win", Event_MapTransition);
 	HookEvent("map_transition", Event_MapTransition, EventHookMode_PostNoCopy);
 	
@@ -49,26 +43,44 @@ public void OnPluginStart()
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	EngineVersion test = GetEngineVersion();
-	if (test == Engine_Left4Dead)
+	if (test != Engine_Left4Dead2)
 	{
-		g_bLeft4Dead2 = false;
+		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
+		return APLRes_SilentFailure;
 	}
-	else if (test == Engine_Left4Dead2)
+	
+	if (!PluginExists("gagmuteban.smx"))
 	{
-		g_bLeft4Dead2 = true;
-	}
-	else
-	{
-		strcopy(error, err_max, "Plugin only supports Left 4 Dead 1 & 2.");
+		strcopy(error, err_max, "The plugin only works with plugin GagMuteBan.smx");
 		return APLRes_SilentFailure;
 	}
 	return APLRes_Success;
 }
 
+stock bool PluginExists(const char[] plugin_name)
+{
+	Handle iter = GetPluginIterator();
+	Handle plugin = null;
+	char name[64];
+
+	while (MorePlugins(iter))
+	{
+		plugin = ReadPlugin(iter);
+		GetPluginFilename(plugin, name, sizeof(name));
+		if (StrEqual(name, plugin_name))
+		{
+			delete iter;
+			return true;
+		}
+	}
+
+	delete iter;
+	return false;
+}
+
 public void OnConfigsExecuted()
 {
 	char sBuf[12];
-	
 	FormatTime(sBuf, sizeof(sBuf)-1, "%Y-%U", GetTime());
 	BuildPath(Path_SM, sg_file2, sizeof(sg_file2)-1, "data/%s_TK.txt", sBuf);
 }
@@ -130,7 +142,6 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 				iUserid = GetClientOfUserId(iUserid);
 
 				event.GetString("weapon", weapon, sizeof(weapon)-10);
-				
 				if (GetClientTeam(iAttacker) == 2)
 				{
 					if (!IsFakeClient(iUserid))
@@ -139,96 +150,42 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 						{
 							if (!IsPlayerBussy(iUserid))
 							{
-								if (g_bLeft4Dead2)
-								{
-									if (StrEqual(weapon, "rifle_sg552", true) 
-									|| StrEqual(weapon, "rifle_desert", true) 
-									|| StrEqual(weapon, "rifle_ak47", true))
-									{
-										HxEyeAngles(iAttacker, -5.0);
-										ig_TKPoints[iAttacker] += 0.2;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "rifle_m60", true))
-									{
-										HxEyeAngles(iAttacker, -8.0);
-										ig_TKPoints[iAttacker] += 0.3;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "smg_silenced", true) 
-									|| StrEqual(weapon, "smg_mp5", true))
-									{
-										HxEyeAngles(iAttacker, -3.0);
-										ig_TKPoints[iAttacker] += 0.1;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "shotgun_chrome", true))
-									{
-										HxEyeAngles(iAttacker, -2.0);
-										ig_TKPoints[iAttacker] += 0.1;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "shotgun_spas", true))
-									{
-										HxEyeAngles(iAttacker, -3.0);
-										ig_TKPoints[iAttacker] += 0.2;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "sniper_scout", true) 
-									|| StrEqual(weapon, "sniper_military", true) 
-									|| StrEqual(weapon, "sniper_awp", true))
-									{
-										HxEyeAngles(iAttacker, -3.0);
-										ig_TKPoints[iAttacker] += 0.2;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "pistol_magnum", true))
-									{
-										HxEyeAngles(iAttacker, -2.0);
-										ig_TKPoints[iAttacker] += 0.1;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "grenade_launcher", true))
-									{
-										ig_TKPoints[iAttacker] += 0.05;
-										return Plugin_Continue;
-									}
-									
-									if (StrEqual(weapon, "melee", true))
-									{
-										ig_TKPoints[iAttacker] += 0.0001;
-									}
-								}
-								
-								if (StrEqual(weapon, "rifle", true))
+								if (StrEqual(weapon, "rifle", true) || StrEqual(weapon, "rifle_sg552", true) || StrEqual(weapon, "rifle_desert", true) || StrEqual(weapon, "rifle_ak47", true))
 								{
 									HxEyeAngles(iAttacker, -5.0);
 									ig_TKPoints[iAttacker] += 0.2;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "smg", true))
+								if (StrEqual(weapon, "rifle_m60", true))
+								{
+									HxEyeAngles(iAttacker, -8.0);
+									ig_TKPoints[iAttacker] += 0.3;
+									return Plugin_Continue;
+								}
+									
+								if (StrEqual(weapon, "sniper_scout", true) || StrEqual(weapon, "sniper_military", true) || StrEqual(weapon, "sniper_awp", true))
+								{
+									HxEyeAngles(iAttacker, -3.0);
+									ig_TKPoints[iAttacker] += 0.2;
+									return Plugin_Continue;
+								}
+								
+								if (StrEqual(weapon, "smg", true) || StrEqual(weapon, "smg_silenced", true) || StrEqual(weapon, "smg_mp5", true))
 								{
 									HxEyeAngles(iAttacker, -3.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "pumpshotgun", true))
+								if (StrEqual(weapon, "pumpshotgun", true) || StrEqual(weapon, "shotgun_chrome", true))
 								{
 									HxEyeAngles(iAttacker, -2.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
 								}
 								
-								if (StrEqual(weapon, "autoshotgun", true))
+								if (StrEqual(weapon, "autoshotgun", true) || StrEqual(weapon, "shotgun_spas", true))
 								{
 									HxEyeAngles(iAttacker, -3.0);
 									ig_TKPoints[iAttacker] += 0.2;
@@ -240,6 +197,31 @@ public Action Event_PlayerHurt(Event event, const char[] name, bool dontBroadcas
 									HxEyeAngles(iAttacker, -2.0);
 									ig_TKPoints[iAttacker] += 0.1;
 									return Plugin_Continue;
+								}
+								
+								if (StrEqual(weapon, "grenade_launcher", true))
+								{
+									ig_TKPoints[iAttacker] += 0.075;
+									return Plugin_Continue;
+								}
+								
+								if (StrEqual(weapon, "pistol", true))
+								{
+									HxEyeAngles(iAttacker, -0.5);
+									ig_TKPoints[iAttacker] += 0.01;
+									return Plugin_Continue;
+								}
+								
+								if (StrEqual(weapon, "pistol_magnum", true))
+								{
+									HxEyeAngles(iAttacker, -2.0);
+									ig_TKPoints[iAttacker] += 0.1;
+									return Plugin_Continue;
+								}
+								
+								if (StrEqual(weapon, "melee", true))
+								{
+									ig_TKPoints[iAttacker] += 0.0001;
 								}
 								
 								if (event.GetInt("type") & 8)
@@ -288,7 +270,6 @@ public Action TK_MSG(Handle timer, Handle hDataPack)
 	if (IsClientInGame(iAttacker))
 	{
 		PrintToChat(iAttacker, "\x04[!tk]\x03 %f TK-points", ig_TKPoints[iAttacker]);
-		
 		if (IsClientInGame(iUserid))
 		{
 			PrintToChat(iAttacker, "\x04[!tk]\x03 %N \x04 attacked \x03 %N", iAttacker, iUserid);
@@ -365,18 +346,21 @@ public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadca
 		{
 			if (!IsFakeClient(iAttacker))
 			{
-				if (!IsFakeClient(iUserid))
+				if (GetClientTeam(iAttacker) == 2)
 				{
-					if (GetClientTeam(iUserid) == 2)
+					if (!IsFakeClient(iUserid))
 					{
-						if (iAttacker != iUserid)
+						if (GetClientTeam(iUserid) == 2)
 						{
-							ig_TKPoints[iAttacker] += 3.0;
-							if (ig_TKPoints[iAttacker] > 10.0)
+							if (iAttacker != iUserid)
 							{
-								UpDateTKPoints(iAttacker);
+								ig_TKPoints[iAttacker] += 3.0;
+								if (ig_TKPoints[iAttacker] > 10.0)
+								{
+									UpDateTKPoints(iAttacker);
+								}
+								PrintToChat(iAttacker, "\x04[!tk]\x03 %f TK-points", ig_TKPoints[iAttacker]);
 							}
-							PrintToChat(iAttacker, "\x04[!tk]\x03 %f TK-points", ig_TKPoints[iAttacker]);
 						}
 					}
 				}
@@ -390,7 +374,6 @@ public Action Event_HealSuccess(Event event, const char[] name, bool dontBroadca
 {
 	int iSubject = GetClientOfUserId(event.GetInt("subject"));
 	int iUserid = GetClientOfUserId(event.GetInt("userid"));
-
 	if (iSubject != iUserid)
 	{
 		if (!IsFakeClient(iSubject))
@@ -414,7 +397,6 @@ public Action Event_ReviveSuccess(Event event, const char[] name, bool dontBroad
 {
 	int iSubject = GetClientOfUserId(event.GetInt("subject"));
 	int iUserid = GetClientOfUserId(event.GetInt("userid"));
-
 	if (iSubject != iUserid)
 	{
 		if (!IsFakeClient(iSubject))
@@ -474,7 +456,6 @@ public void Event_MapTransition(Event event, const char[] name, bool dontBroadca
 					{
 						ig_TKPoints[i] = 0.0;
 					}
-					
 					UpDateTKPoints(i);
 				}
 			}
@@ -490,9 +471,9 @@ stock void LoadingBase(int client)
 		KeyValues hGM = new KeyValues("data");
 		if (hGM.ImportFromFile(sg_file2))
 		{
-			char s1[24];
+			char s1[32];
 			GetClientAuthId(client, AuthId_Steam2, s1, sizeof(s1)-1);
-			
+
 			if (hGM.JumpToKey(s1))
 			{
 				ig_TKPoints[client] = hGM.GetFloat("Autoban", 0.0);
@@ -513,11 +494,11 @@ stock void UpDateTKPoints(int client)
 		KeyValues hGM = new KeyValues("data");
 		hGM.ImportFromFile(sg_file2);
 		
-		char s1[24];
+		char s1[32];
 		GetClientAuthId(client, AuthId_Steam2, s1, sizeof(s1)-1);
 
 		hGM.JumpToKey(s1, true);
-		
+
 		if (ig_TKPoints[client] > 10.0)
 		{
 			ig_TKPoints[client] = 0.0;
@@ -528,7 +509,7 @@ stock void UpDateTKPoints(int client)
 				LogMessage("TK-BAN (%N)", client);
 			}
 		}
-		
+
 		if (ig_TKPoints[client] == 0.0)
 		{
 			hGM.DeleteThis();
@@ -549,7 +530,7 @@ stock int HxClientTimeBan(int client)
 	if (client)
 	{
 		char sName[32];
-		char sTeamID[24];
+		char sTeamID[32];
 
 		KeyValues hGM = new KeyValues("gagmute");
 		hGM.ImportFromFile(sg_file1);
