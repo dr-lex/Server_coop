@@ -64,7 +64,7 @@ static char sMemu_Time[][][] =
 
 public Plugin myinfo =
 {
-	name = "gagmute",
+	name = "GagMuteBan",
 	author = "MAKS & dr lex",
 	description = "gag & mute & ban",
 	version = "2.0.2",
