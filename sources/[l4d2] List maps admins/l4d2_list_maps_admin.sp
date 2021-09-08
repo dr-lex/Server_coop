@@ -18,16 +18,12 @@ char sName[120];
 
 char sBuffer[64];
 
-#if defined _l4d2_changelevel_included
-bool g_bChangeLevel;
-#endif
-
 public Plugin myinfo = 
 {
 	name = "[l4d2] List maps admins",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "",
-	version = "1.3.1",
+	version = "1.3.2",
 	url = "https://forums.alliedmods.net/showthread.php?p=2736182"
 };
 
@@ -50,41 +46,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
-#if defined _l4d2_changelevel_included
-	else
-	{
-		if (PluginExists("l4d2_changelevel.smx"))
-		{
-			g_bChangeLevel = true;
-		}
-		else
-		{
-			g_bChangeLevel = false;
-		}
-	}
-#endif
 	return APLRes_Success;
-}
-
-stock bool PluginExists(const char[] plugin_name)
-{
-	Handle iter = GetPluginIterator();
-	Handle plugin = null;
-	char name[64];
-
-	while (MorePlugins(iter))
-	{
-		plugin = ReadPlugin(iter);
-		GetPluginFilename(plugin, name, sizeof(name));
-		if (StrEqual(name, plugin_name))
-		{
-			delete iter;
-			return true;
-		}
-	}
-
-	delete iter;
-	return false;
 }
 
 public void OnAdminMenuReady(Handle topmenu)
@@ -1150,14 +1112,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"1") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m1);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m1);
-				}
+				L4D2_ChangeLevel(m1);
 			#else
 				ServerCommand("changelevel %s", m1);
 			#endif
@@ -1165,14 +1120,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"2") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m2);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m2);
-				}
+				L4D2_ChangeLevel(m2);
 			#else
 				ServerCommand("changelevel %s", m2);
 			#endif
@@ -1180,14 +1128,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"3") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m3);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m3);
-				}
+				L4D2_ChangeLevel(m3);
 			#else
 				ServerCommand("changelevel %s", m3);
 			#endif
@@ -1195,14 +1136,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"4") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m4);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m4);
-				}
+				L4D2_ChangeLevel(m4);
 			#else
 				ServerCommand("changelevel %s", m4);
 			#endif
@@ -1210,14 +1144,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"5") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m5);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m5);
-				}
+				L4D2_ChangeLevel(m5);
 			#else
 				ServerCommand("changelevel %s", m5);
 			#endif
@@ -1225,14 +1152,7 @@ public int CampaignHandler(Menu menu, MenuAction action, int param1, int param2)
 			if (strcmp(info,"6") == 0)
 			{
 			#if defined _l4d2_changelevel_included
-				if (g_bChangeLevel)
-				{
-					L4D2_ChangeLevel(m6);
-				}
-				else
-				{
-					ServerCommand("changelevel %s", m6);
-				}
+				L4D2_ChangeLevel(m6);
 			#else
 				ServerCommand("changelevel %s", m6);
 			#endif
