@@ -418,7 +418,7 @@ public Action CMD_addbanmenu(int client, int args)
 	{
 		if (client == 0)
 		{
-			PrintToServer("[GMB] server please uses sm_exban <name> <minutes>");
+			PrintToServer("[GMB] server please uses sm_addban <name> <minutes>");
 			return Plugin_Handled;
 		}
 		
