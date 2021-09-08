@@ -9,11 +9,6 @@ int IsRoundStarted = 0;
 char NextCampaignVote[32];
 int seconds;
 char NextCampaign[53];
-
-#if defined _l4d2_changelevel_included
-bool g_bChangeLevel;
-#endif
-
 char sMapName[40];
 
 public Plugin myinfo = 
@@ -21,7 +16,7 @@ public Plugin myinfo =
 	name = "[l4d2] Map Finale Next",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Rotation of companies in the list, full loading of players when changing cards",
-	version = "2.8.0",
+	version = "2.8.1",
 	url = ""
 };
 
@@ -43,19 +38,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2.");
 		return APLRes_SilentFailure;
 	}
-	#if defined _l4d2_changelevel_included
-	else
-	{
-		if (PluginExists("l4d2_changelevel.smx"))
-		{
-			g_bChangeLevel = true;
-		}
-		else
-		{
-			g_bChangeLevel = false;
-		}
-	}
-	#endif
 	return APLRes_Success;
 }
 
@@ -266,14 +248,7 @@ public void ChangeCampaignEx()
 	}
 	
 #if defined _l4d2_changelevel_included
-	if (g_bChangeLevel)
-	{
-		L4D2_ChangeLevel(sMapName);
-	}
-	else
-	{
-		ServerCommand("changelevel %s", sMapName);
-	}
+	L4D2_ChangeLevel(sMapName);
 #else
 	ServerCommand("changelevel %s", sMapName);
 #endif
@@ -282,7 +257,6 @@ public void ChangeCampaignEx()
 stock void PrintNextCampaign(int client = 0)
 {
 	NextMission();
-
 	if (client)
 	{
 		PrintToChat(client, "\x05%t: \x04%s", "Next campaign", NextCampaign);
@@ -301,25 +275,4 @@ public Action Command_Next(int client, int args)
 		PrintNextCampaign(client);
 	}
 	return Plugin_Handled;
-}
-
-stock bool PluginExists(const char[] plugin_name)
-{
-	Handle iter = GetPluginIterator();
-	Handle plugin = null;
-	char name[64];
-
-	while (MorePlugins(iter))
-	{
-		plugin = ReadPlugin(iter);
-		GetPluginFilename(plugin, name, sizeof(name));
-		if (StrEqual(name, plugin_name))
-		{
-			delete iter;
-			return true;
-		}
-	}
-
-	delete iter;
-	return false;
 }
