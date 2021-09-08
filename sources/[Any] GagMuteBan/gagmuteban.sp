@@ -68,7 +68,7 @@ public Plugin myinfo =
 	author = "MAKS & dr lex",
 	description = "gag & mute & ban",
 	version = "2.0.2",
-	url = "forums.alliedmods.net/showthread.php?p=2347844"
+	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
 public void OnPluginStart()
