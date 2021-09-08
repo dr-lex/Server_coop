@@ -67,7 +67,7 @@ public Plugin myinfo =
 	name = "gagmute",
 	author = "MAKS & dr lex",
 	description = "gag & mute & ban",
-	version = "2.0.1",
+	version = "2.0.2",
 	url = "forums.alliedmods.net/showthread.php?p=2347844"
 };
 
@@ -90,6 +90,12 @@ public void OnPluginStart()
 	}
 	
 	HookEvent("round_start", Event_RoundStart);
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	RegPluginLibrary("gagmuteban");
+	return APLRes_Success;
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -197,7 +203,7 @@ public void HxClientGagMuteBanEx(int &client)
 			{
 				iLeftMinute = (iMute - iTime) /60;
 				ServerCommand("sm_mute #%d", userid);
-				PrintToChat(client, "[GMB] Mute，%d minute(s)", iLeftMinute);
+				PrintToChat(client, "\x05[\x04GMB\x05] \x04Mute \x03%d \x04minute(s)", iLeftMinute);
 				#if HX_DELETE
 					iDelete = 0;
 				#endif
@@ -211,7 +217,7 @@ public void HxClientGagMuteBanEx(int &client)
 			{
 				iLeftMinute = (iGag - iTime) /60;
 				ServerCommand("sm_gag #%d", userid);
-				PrintToChat(client, "[GMB] ChaT %d minute(s)", iLeftMinute);
+				PrintToChat(client, "\x05[\x04GMB\x05] \x04ChaT \x03%d \x04minute(s)", iLeftMinute);
 				#if HX_DELETE
 					iDelete = 0;
 				#endif
@@ -295,7 +301,7 @@ public int MenuHandler_Ban(Menu menu, MenuAction action, int param1, int param2)
 					if (HxClientTimeBan(client, ig_minutes))
 					{
 						LogToFileEx(sg_log, "Ban: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-						PrintToChatAll("[GMB] \x05%N\x04，\x05Ban \x03%d \x05minute(s)", client, ig_minutes);
+						PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05，\x04Ban \x03%d \x04minute(s)", client, ig_minutes);
 						KickClient(client, "%d minute(s) ban.", ig_minutes);
 					}
 				}
@@ -321,9 +327,12 @@ public Action CMD_addban(int client)
 			{
 				if (IsClientInGame(i) && !IsFakeClient(i))
 				{
-					GetClientName(i, sName, sizeof(sName)-12);
-					Format(sNumber, sizeof(sNumber)-1, "%d", i);
-					hMenu.AddItem(sNumber, sName);
+					if (client != i)
+					{
+						GetClientName(i, sName, sizeof(sName)-12);
+						Format(sNumber, sizeof(sNumber)-1, "%d", i);
+						hMenu.AddItem(sNumber, sName);
+					}
 				}
 				i += 1;
 			}
@@ -396,7 +405,7 @@ public Action CMD_addbanmenu(int client, int args)
 			if (client)
 			{
 				LogToFileEx(sg_log, "Ban: %N(Admin) -> %N -> %d minute(s)", client, target, minutes);
-				PrintToChatAll("[GMB] \x05%N\x04，\x05Ban \x03%d \x05minute(s)", target, minutes);
+				PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05，\x04Ban \x03%d \x05minute(s)", target, minutes);
 			}
 			else
 			{
@@ -478,7 +487,7 @@ public int MenuHandler_Gage(Menu menu, MenuAction action, int param1, int param2
 					if (HxClientTimeGag(client, ig_minutes))
 					{
 						LogToFileEx(sg_log, "Gag: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-						PrintToChatAll("[GMB] \x05%N\x04, \x05Chat \x03%d \x04minute(s)", client, ig_minutes);
+						PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05, \x04Chat \x03%d \x04minute(s)", client, ig_minutes);
 					}
 				}
 			}
@@ -503,9 +512,12 @@ public Action CMD_addgag(int client)
 			{
 				if (IsClientInGame(i) && !IsFakeClient(i))
 				{
-					GetClientName(i, sName, sizeof(sName)-12);
-					Format(sNumber, sizeof(sNumber)-1, "%d", i);
-					hMenu.AddItem(sNumber, sName);
+					if (client != i)
+					{
+						GetClientName(i, sName, sizeof(sName)-12);
+						Format(sNumber, sizeof(sNumber)-1, "%d", i);
+						hMenu.AddItem(sNumber, sName);
+					}
 				}
 				i += 1;
 			}
@@ -575,7 +587,7 @@ public Action CMD_addgagmenu(int client, int args)
 			if (client)
 			{
 				LogToFileEx(sg_log, "Gag: %N(Admin) -> %N -> %d minute(s)", client, target, minutes);
-				PrintToChatAll("[GMB] \x05%N\x04, \x05Chat \x03%d \x05minute(s)", target, minutes);
+				PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05, \x04Chat \x03%d \x04minute(s)", target, minutes);
 			}
 			else
 			{
@@ -656,7 +668,7 @@ public int MenuHandler_Mute(Menu menu, MenuAction action, int param1, int param2
 					if (HxClientTimeMute(client, ig_minutes))
 					{
 						LogToFileEx(sg_log, "Mute: %N(Admin) -> %N -> %d minute(s).", param1, client, ig_minutes);
-						PrintToChatAll("[GMB] \x05%N\x04, \x05Mute \x03%d \x05minute(s)", client, ig_minutes);
+						PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05, \x04Mute \x03%d \x04minute(s)", client, ig_minutes);
 					}
 				}
 			}
@@ -679,9 +691,12 @@ public Action CMD_addmute(int client)
 		{
 			if (IsClientInGame(i) && !IsFakeClient(i))
 			{
-				GetClientName(i, sName, sizeof(sName)-12);
-				Format(sNumber, sizeof(sNumber)-1, "%d", i);
-				hMenu.AddItem(sNumber, sName);
+				if (client != i)
+				{
+					GetClientName(i, sName, sizeof(sName)-12);
+					Format(sNumber, sizeof(sNumber)-1, "%d", i);
+					hMenu.AddItem(sNumber, sName);
+				}
 			}
 			i += 1;
 		}
@@ -753,7 +768,7 @@ public Action CMD_addmutemenu(int client, int args)
 			if (client > 0)
 			{
 				LogToFileEx(sg_log, "Mute: %N(Admin) -> %N -> %d minute(s).", client, target, minutes);
-				PrintToChatAll("[GMB] \x05%N\x04, \x05Mute \x03%d \x05minute(s)", target, minutes);
+				PrintToChatAll("\x05[\x04GMB\x05] \x03%N\x05, \x04Mute \x03%d \x04minute(s)", target, minutes);
 			}
 			else
 			{
@@ -914,7 +929,7 @@ public Action CMD_bansteamid(int client, int args)
 	if (client != 0)
 	{
 		LogToFileEx(sg_log, "%N(Admin) added steamid %s in GagMuteBan list, %d minute(s) ban.", client, authid, minutes);
-		PrintToChat(client, "[GMB] %s(SteamID) ban %d minute(s)", authid, minutes);
+		PrintToChat(client, "\x05[\x04GMB\x05] \x03%s\x05(\x04SteamID\x05) \x04ban \x03%d \x04minute(s)", authid, minutes);
 	}
 	else
 	{
