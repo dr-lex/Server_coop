@@ -42,7 +42,7 @@ char sg_log[160];
 
 int ig_minutes;
 
-static char sBan_Time[][][] =
+static char sMemu_Time[][][] =
 {
 	{"5",			"5 mins"},
 	{"30",			"30 mins"},
@@ -74,12 +74,12 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
 	ig_minutes = 1;
-	RegAdminCmd("sm_addban", CMD_addbanmenu, ADMFLAG_BAN, "");
-	RegAdminCmd("sm_addgag", CMD_addgagmenu, ADMFLAG_CHAT, "");
-	RegAdminCmd("sm_addmute", CMD_addmutemenu, ADMFLAG_CHAT, "");
-	RegAdminCmd("sm_bansteamid",  CMD_bansteamid,  ADMFLAG_BAN,  "sm_bansteam <minutes> <STEAM_ID>");
-	RegAdminCmd("sm_unban", CMD_unban, ADMFLAG_CHAT, "");
-	
+	RegAdminCmd("sm_addban", CMD_addbanmenu, ADMFLAG_BAN, "sm_addban <name> <minutes> or sm_addban to open Ban menu");
+	RegAdminCmd("sm_addgag", CMD_addgagmenu, ADMFLAG_CHAT, "sm_addgag <name> <minutes> or sm_addgag to open AddGag menu");
+	RegAdminCmd("sm_addmute", CMD_addmutemenu, ADMFLAG_CHAT, "sm_addmute <name> <minutes> or sm_addmute to open AddMute menu");
+	RegAdminCmd("sm_bansteamid",  CMD_bansteamid,  ADMFLAG_BAN,  "sm_bansteamid <minutes> <STEAM_ID>");
+	RegAdminCmd("sm_unban", CMD_unban, ADMFLAG_CHAT, "sm_unban <STEAM_ID>");
+
 	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/GagMuteBan.txt");
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/GagMuteBan.log");
 	
@@ -133,12 +133,12 @@ public void OnAdminMenuReady(Handle topmenu)
 	}
 	
 	hTopMenuHandle = view_as<TopMenu>(topmenu);
-	TopMenuObject Menu_Category_Respawn = hTopMenuHandle.AddCategory("Gag/Mute/Ban - For a while", Category_Handler);
-	if (Menu_Category_Respawn != INVALID_TOPMENUOBJECT)
+	TopMenuObject MCategory = hTopMenuHandle.AddCategory("Gag/Mute/Ban - For a while", Category_Handler);
+	if (MCategory != INVALID_TOPMENUOBJECT)
 	{
-		hTopMenuHandle.AddItem("sm_bantest", AdminMenu_Ban, Menu_Category_Respawn, "sm_bantest", ADMFLAG_BAN);
-		hTopMenuHandle.AddItem("sm_mutetest", AdminMenu_Mute, Menu_Category_Respawn, "sm_mutetest", ADMFLAG_BAN);
-		hTopMenuHandle.AddItem("sm_gagtest", AdminMenu_Gag, Menu_Category_Respawn, "sm_mutetest", ADMFLAG_BAN);
+		hTopMenuHandle.AddItem("sm_banadmin", AdminMenu_Ban, MCategory, "sm_banadmin", ADMFLAG_BAN);
+		hTopMenuHandle.AddItem("sm_muteadmin", AdminMenu_Mute, MCategory, "sm_muteadmin", ADMFLAG_BAN);
+		hTopMenuHandle.AddItem("sm_gagadmin", AdminMenu_Gag, MCategory, "sm_muteadmin", ADMFLAG_BAN);
 	}
 }
 
@@ -380,7 +380,7 @@ public Action CMD_addbanmenu(int client, int args)
 {
 	if (args != 2 && args != 0)
 	{
-		ReplyToCommand(client, "[GMB] sm_addban <name> <minutes> or sm_addban to open exBan menu");
+		ReplyToCommand(client, "[GMB] sm_addban <name> <minutes> or sm_addban to open Ban menu");
 	}
 	
 	if (args == 2)
@@ -423,9 +423,9 @@ public Action CMD_addbanmenu(int client, int args)
 		}
 		
 		Menu menu = new Menu(AddMenuBan);
-		for(int i = 0; i < sizeof(sBan_Time); i++)
+		for(int i = 0; i < sizeof(sMemu_Time); i++)
 		{
-			menu.AddItem(sBan_Time[i][0], sBan_Time[i][1]);
+			menu.AddItem(sMemu_Time[i][0], sMemu_Time[i][1]);
 		}
 		menu.SetTitle("Menu Ban SteamID (Time)", client);
 		menu.ExitButton = true;
@@ -604,9 +604,9 @@ public Action CMD_addgagmenu(int client, int args)
 		}
 
 		Menu menu = new Menu(AddMenuGag);
-		for (int i = 0; i < sizeof(sBan_Time); i++)
+		for (int i = 0; i < sizeof(sMemu_Time); i++)
 		{
-			menu.AddItem(sBan_Time[i][0], sBan_Time[i][1]);
+			menu.AddItem(sMemu_Time[i][0], sMemu_Time[i][1]);
 		}
 		menu.SetTitle("Menu Block Chat (Time)", client);
 		menu.ExitButton = true;
@@ -785,9 +785,9 @@ public Action CMD_addmutemenu(int client, int args)
 		}
 
 		Menu menu = new Menu(AddMenuMute);
-		for (int i = 0; i < sizeof(sBan_Time); i++)
+		for (int i = 0; i < sizeof(sMemu_Time); i++)
 		{
-			menu.AddItem(sBan_Time[i][0], sBan_Time[i][1]);
+			menu.AddItem(sMemu_Time[i][0], sMemu_Time[i][1]);
 		}
 		menu.SetTitle("Menu Block Microphone (Time)", client);
 		menu.ExitButton = true;
@@ -874,7 +874,7 @@ public Action CMD_bansteamid(int client, int args)
 {
 	if (args < 1)
 	{
-		ReplyToCommand(client, "Usage: sm_bansteam <minutes> <STEAM_ID>");
+		ReplyToCommand(client, "Usage: sm_bansteamid <minutes> <STEAM_ID>");
 		return Plugin_Handled;
 	}
 	
@@ -889,7 +889,7 @@ public Action CMD_bansteamid(int client, int args)
 	/* Get minute */
 	if ((len = BreakString(arg_string, minute, sizeof(minute))) == -1)
 	{
-		ReplyToCommand(client, "Usage: sm_bansteam <minutes> <steamid>");
+		ReplyToCommand(client, "Usage: sm_bansteamid <minutes> <steamid>");
 		return Plugin_Handled;
 	}	
 	total_len += len;
