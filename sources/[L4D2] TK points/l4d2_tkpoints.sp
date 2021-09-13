@@ -31,6 +31,8 @@
 #include <sdktools>
 #pragma newdecls required
 
+native int HxSetClientBan(int client, int iTime);
+
 char sg_file1[160];
 char sg_file2[160];
 char sg_log[160];
@@ -42,7 +44,7 @@ int ig_time_wp[MAXPLAYERS+1];
 int ig_time_wp_turbo[MAXPLAYERS+1];
 int ig_time_nospam[MAXPLAYERS+1];
 
-#define PLUGIN_VERSION "1.6.5"
+#define PLUGIN_VERSION "1.6.6"
 
 public Plugin myinfo = 
 {
@@ -516,7 +518,8 @@ stock void UpDateTKPoints(int client)
 		if (ig_TKPoints[client] > 10.0)
 		{
 			ig_TKPoints[client] = 0.0;
-			if (HxClientTimeBan(client))
+			//if (HxClientTimeBan(client))
+			if (HxSetClientBan(client, 60*60*12))
 			{
 				PrintToChatAll("\x04[!tk]\x05 %d min ban:\x04 %N", 60*12, client);
 				KickClient(client, "%d Min ban.", 60*12);
@@ -539,7 +542,7 @@ stock void UpDateTKPoints(int client)
 	}
 }
 
-stock int HxClientTimeBan(int client)
+/*stock int HxClientTimeBan(int client)
 {
 	if (client)
 	{
@@ -564,7 +567,7 @@ stock int HxClientTimeBan(int client)
 		return 1;
 	}
 	return 0;
-}
+}*/
 
 stock bool IsPlayerBussy(int client)
 {
