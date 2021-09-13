@@ -42,6 +42,10 @@ char sg_log[160];
 
 int ig_minutes;
 
+/*
+ * native int HxSetClientBan(int client, int iTime);
+*/
+
 static char sMemu_Time[][][] =
 {
 	{"5",			"5 mins"},
@@ -67,7 +71,7 @@ public Plugin myinfo =
 	name = "GagMuteBan",
 	author = "MAKS & dr lex",
 	description = "gag & mute & ban",
-	version = "2.0.2",
+	version = "2.0.3",
 	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
@@ -95,6 +99,7 @@ public void OnPluginStart()
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	RegPluginLibrary("gagmuteban");
+	CreateNative("HxSetClientBan", Native_HxSetClientBan);
 	return APLRes_Success;
 }
 
@@ -248,6 +253,23 @@ public void HxClientGagMuteBanEx(int &client)
 		}
 	}
 	delete hGM;
+}
+
+stock int Native_HxSetClientBan(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if (client < 1 || client > MaxClients)
+	{
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
+	}
+	
+	int iTime = GetNativeCell(2);
+	if (iTime > 0)
+	{
+		HxClientTimeBan(client, iTime);
+	}
+	
+	return true;
 }
 
 public int HxClientTimeBan(int &client, int iminute)
