@@ -30,7 +30,8 @@ static char sCountryBlock[][] =
 	"Bolivia", 
 	"Macao", 
 	"Venezuela", 
-	"South Africa"
+	"South Africa", 
+	"Zimbabwe"
 };
 
 static char sCountry[][] =
@@ -79,7 +80,13 @@ static char sCountry[][] =
 	"Netherlands", 
 	"Qatar", 
 	"Kuwait", 
-	"Morocco"
+	"Morocco", 
+	"Malta", 
+	"Georgia", 
+	"Algeria", 
+	"Saudi Arabia", 
+	"Hungary", 
+	"Albania"
 };
 
 public Plugin myinfo = 
@@ -87,7 +94,7 @@ public Plugin myinfo =
 	name = "[ANY] Blocks Region",
 	author = "dr lex",
 	description = "Blocks countries by region",
-	version = "1.0.1",
+	version = "1.0.2",
 	url = ""
 }
 
@@ -96,7 +103,7 @@ public void OnPluginStart()
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/info_country.log");
 }
 
-public void OnClientPutInServer(int client)
+public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 {
 	if (!IsFakeClient(client))
 	{
@@ -104,26 +111,25 @@ public void OnClientPutInServer(int client)
 		GetClientIP(client, IP, sizeof(IP), true);
 		GeoipCountry(IP, Country, sizeof(Country));
 		
-		for (int count = 0; count <= 22; count++)
+		for (int count = 0; count <= 23; count++)
 		{
 			if (StrEqual(Country, sCountryBlock[count]))
 			{
-				char sTime[64];
-				FormatTime(sTime, sizeof(sTime)-1, "The server is not available in your region =(");
-				KickClient(client,"%s", sTime);
-				LogToFileEx(sg_log, "[Kick] %N (%s)", client, Country);
-				return;
+				Format(rejectmsg, maxlen, "The server is not available in your region =(");
+				LogToFileEx(sg_log, "[Kick] %N (%s) ip %s", client, Country, IP);
+				return false;
 			}
 		}
 		
-		for (int count = 0; count <= 44; count++)
+		for (int count = 0; count <= 50; count++)
 		{
 			if (StrEqual(Country, sCountry[count]))
 			{
-				return;
+				return true;
 			}
 		}
-
-		LogToFileEx(sg_log, "[New] %s (%N)", Country, client);
+		
+		LogToFileEx(sg_log, "[New] %s (%N) ip %s", Country, client, IP);
 	}
+	return true;
 }
