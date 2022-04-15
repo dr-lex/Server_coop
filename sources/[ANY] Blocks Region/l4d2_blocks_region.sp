@@ -86,7 +86,10 @@ static char sCountry[][] =
 	"Algeria", 
 	"Saudi Arabia", 
 	"Hungary", 
-	"Albania"
+	"Albania", 
+	"Puerto Rico", 
+	"Switzerland", 
+	"Oman"
 };
 
 public Plugin myinfo = 
@@ -94,7 +97,7 @@ public Plugin myinfo =
 	name = "[ANY] Blocks Region",
 	author = "dr lex",
 	description = "Blocks countries by region",
-	version = "1.0.2",
+	version = "1.0.3",
 	url = ""
 }
 
@@ -110,7 +113,6 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 		char IP[16], Country[46];
 		GetClientIP(client, IP, sizeof(IP), true);
 		GeoipCountry(IP, Country, sizeof(Country));
-		
 		for (int count = 0; count <= 23; count++)
 		{
 			if (StrEqual(Country, sCountryBlock[count]))
@@ -121,14 +123,13 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 			}
 		}
 		
-		for (int count = 0; count <= 50; count++)
+		for (int count = 0; count <= 53; count++)
 		{
 			if (StrEqual(Country, sCountry[count]))
 			{
 				return true;
 			}
 		}
-		
 		LogToFileEx(sg_log, "[New] %s (%N) ip %s", Country, client, IP);
 	}
 	return true;
