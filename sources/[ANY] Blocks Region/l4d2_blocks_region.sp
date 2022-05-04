@@ -10,6 +10,7 @@ static char sCountryBlock[][] =
 {
 	"Argentina",
 	"Australia",
+	"Bangladesh",
 	"Bolivia",
 	"Brazil",
 	"Chile",
@@ -45,6 +46,7 @@ static char sCountry[][] =
 	"Azerbaijan",
 	"Belarus",
 	"Belgium",
+	"Bosnia and Herzegovina",
 	"Bulgaria",
 	"Canada",
 	"Croatia",
@@ -88,6 +90,7 @@ static char sCountry[][] =
 	"Russia",
 	"Saudi Arabia",
 	"Serbia",
+	"Syria",
 	"Slovakia",
 	"Slovenia",
 	"Spain",
@@ -99,7 +102,9 @@ static char sCountry[][] =
 	"Ukraine",
 	"United Kingdom",
 	"United States",
-	"Uzbekistan"
+	"Uzbekistan",
+	"North Macedonia",
+	"New Zealand"
 };
 
 public Plugin myinfo = 
@@ -107,7 +112,7 @@ public Plugin myinfo =
 	name = "[ANY] Blocks Region",
 	author = "dr lex",
 	description = "Blocks countries by region",
-	version = "1.0.4",
+	version = "1.0.5",
 	url = ""
 }
 
@@ -120,10 +125,10 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 {
 	if (!IsFakeClient(client))
 	{
-		char IP[16], Country[46];
+		char IP[16], Country[64];
 		GetClientIP(client, IP, sizeof(IP), true);
 		GeoipCountry(IP, Country, sizeof(Country));
-		for (int count = 0; count <= 25; count++)
+		for (int count = 0; count <= 26; count++)
 		{
 			if (StrEqual(Country, sCountryBlock[count]))
 			{
@@ -132,7 +137,7 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 			}
 		}
 		
-		for (int count = 0; count <= 61; count++)
+		for (int count = 0; count <= 65; count++)
 		{
 			if (StrEqual(Country, sCountry[count]))
 			{
