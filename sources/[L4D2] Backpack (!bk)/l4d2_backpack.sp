@@ -1,40 +1,8 @@
-/**
- * =============================================================================
- * Copyright https://steamcommunity.com/id/dr_lex/
- *
-
- * =============================================================================
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, version 3.0, as published by the
- * Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License along with
- * this program.  If not, see <www.gnu.org/licenses/>.
- *
- * As a special exception, AlliedModders LLC gives you permission to link the
- * code of this program (as well as its derivative works) to "Half-Life 2," the
- * "Source Engine," the "SourcePawn JIT," and any Game MODs that run on software
- * by the Valve Corporation.  You must obey the GNU General Public License in
- * all respects for all other code used.  Additionally, AlliedModders LLC grants
- * this exception to all derivative works.  AlliedModders LLC defines further
- * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
- * or <www.sourcemod.net/license.php>.
- *
-*/
-
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #pragma newdecls required
-
-char sg_Map[55];
 
 char sg_slot0[MAXPLAYERS+1][64];
 int ig_prop0[MAXPLAYERS+1]; /* m_iClip1 */
@@ -56,19 +24,27 @@ int BackpackIndex[MAXPLAYERS+1];
 
 int ig_time[MAXPLAYERS+1];
 
+#define DEBUG 1
+#if DEBUG
+native int HxAmmoGrenadeLauncher(int client, int iAmmo);
+#define OFFSET 6260
+#endif
+
+native bool L4D_IsFirstMapInScenario();
+
 public Plugin myinfo =
 {
 	name = "[L4D2] Backpack (!bk)",
 	author = "dr lex",
 	description = "",
-	version = "1.5.0a",
+	version = "1.5.8",
 	url = ""
 };
 
 public void OnPluginStart()
 {
 	RegConsoleCmd("sm_bk", CMD_backpack, "", 0);
-	
+
 	LoadTranslations("bk.phrases");
 	
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
@@ -79,7 +55,7 @@ public void OnPluginStart()
 
 /* --------------------------------- */
 
-stock void HxCleaning(int &i)
+void HxCleaning(int &i)
 {
 	sg_slot0[i][0] = '\0';
 	ig_prop0[i] = 0;
@@ -89,7 +65,7 @@ stock void HxCleaning(int &i)
 	ig_prop4[i] = 0;
 }
 
-stock void HxCleaningMaps(int &i)
+void HxCleaningMaps(int &i)
 {
 	sg_slot0m[i][0] = '\0';
 	ig_prop0m[i] = 0;
@@ -99,7 +75,7 @@ stock void HxCleaningMaps(int &i)
 	ig_prop4m[i] = 0;
 }
 
-stock void HxUpdate(int &i)
+void HxUpdate(int &i)
 {
 	Format(sg_slot0[i], 40-1, "%s", sg_slot0m[i]);
 	ig_prop0[i] = ig_prop0m[i];
@@ -110,24 +86,26 @@ stock void HxUpdate(int &i)
 	HxAddBackpack(i);
 }
 
-stock int HxSpawnSlot0(int &i)
+int HxSpawnSlot0(int &i)
 {		/* Спавним содержимое рюкзака рядом с игроком */
-	float fxyz[3];	
+	float fxyz[3];
 	if (sg_slot0[i][0])
 	{
 		int iEnt = CreateEntityByName(sg_slot0[i]);		
 		if (iEnt > 0)
 		{			
+			GetEntPropVector(i, Prop_Send, "m_vecOrigin", fxyz);
+			fxyz[2] += 50;
+			
 			DispatchSpawn(iEnt);
 			
 			SetEntProp(iEnt, Prop_Send, "m_iClip1", ig_prop0[i]);
 			SetEntProp(iEnt, Prop_Send, "m_upgradeBitVec", ig_prop1[i]); /*	лазер, осколочные, зажигательные	*/
 			SetEntProp(iEnt, Prop_Send, "m_nUpgradedPrimaryAmmoLoaded", ig_prop2[i]);
+			//SetPlayerReserveAmmo(i, iEnt, 0);
 			SetEntProp(iEnt, Prop_Send, "m_iExtraPrimaryAmmo", ig_prop3[i]);
 			SetEntProp(iEnt, Prop_Send, "m_nSkin", ig_prop4[i]);
-
-			GetEntPropVector(i, Prop_Send, "m_vecOrigin", fxyz);
-			fxyz[2] += 50;
+			SetEntProp(iEnt, Prop_Data, "m_nSolidType", 6);
 			TeleportEntity(iEnt, fxyz, NULL_VECTOR, NULL_VECTOR);			
 			HxCleaning(i);
 			return 1;
@@ -136,28 +114,27 @@ stock int HxSpawnSlot0(int &i)
 	return 0;
 }
 
-stock void HxFakeCHEAT(int &client, const char[] sCmd, const char[] sArg)
-{
-	int iFlags = GetCommandFlags(sCmd);
-	SetCommandFlags(sCmd, iFlags & ~FCVAR_CHEAT);
-	FakeClientCommand(client, "%s %s", sCmd, sArg);
-	SetCommandFlags(sCmd, iFlags);
-}
-
 stock int HxGiveSlot0(int &i)
 {		/* Игрок взял с рюкзака */
 	if (sg_slot0[i][0])
 	{
-		HxFakeCHEAT(i, "give", sg_slot0[i]);
-		int iEnt = GetPlayerWeaponSlot(i, 0);
-		if (iEnt > 0)
+		int weapon = GivePlayerItem(i, sg_slot0[i]);
+		if (weapon != -1)
 		{
-			SetEntProp(iEnt, Prop_Send, "m_iClip1", ig_prop0[i]);
-			SetEntProp(iEnt, Prop_Send, "m_upgradeBitVec", ig_prop1[i]); /*	лазер, осколочные, зажигательные	*/
-			SetEntProp(iEnt, Prop_Send, "m_nUpgradedPrimaryAmmoLoaded", ig_prop2[i]);
-			SetPlayerReserveAmmo(i, iEnt, ig_prop3[i]);
-			SetEntProp(iEnt, Prop_Send, "m_iExtraPrimaryAmmo", ig_prop3[i]);
-			SetEntProp(iEnt, Prop_Send, "m_nSkin", ig_prop4[i]);
+			SetEntProp(weapon, Prop_Send, "m_iClip1", ig_prop0[i]);
+			SetEntProp(weapon, Prop_Send, "m_upgradeBitVec", ig_prop1[i]);
+			SetEntProp(weapon, Prop_Send, "m_nUpgradedPrimaryAmmoLoaded", ig_prop2[i]);
+			SetPlayerReserveAmmo(i, weapon, ig_prop3[i]);
+			SetEntProp(weapon, Prop_Send, "m_iExtraPrimaryAmmo", ig_prop3[i]);
+			SetEntProp(weapon, Prop_Send, "m_nSkin", ig_prop4[i]);
+			
+		#if DEBUG
+			if (StrEqual(sg_slot0[i], "weapon_grenade_launcher"))
+			{
+				HxAmmoGrenadeLauncher(i, ig_prop0[i]);
+				SetEntData(i, OFFSET + 68, 0);
+			}
+		#endif
 		}
 
 		HxCleaning(i);
@@ -207,6 +184,7 @@ stock void SetPlayerReserveAmmo(int client, int weapon, int ammo)
 public void OnClientPutInServer(int client)
 {		/* При заходе игрока чистим рюкзак */
 	HxCleaning(client);
+	
 	if (!IsFakeClient(client))
 	{
 		CreateTimer(1.0, TimerClientPost, client, TIMER_FLAG_NO_MAPCHANGE);
@@ -221,8 +199,7 @@ public void OnMapStart()
 	GetConVarString(g_Mode, mode, sizeof(mode));
 	if (strcmp(mode, "coop") == 0)
 	{
-		GetCurrentMap(sg_Map, sizeof(sg_Map)-1);
-		if (StrContains(sg_Map, "m1_", true) > 1)
+		if (L4D_IsFirstMapInScenario())
 		{
 			int i = 1;
 			while (i <= MaxClients)
@@ -255,7 +232,9 @@ public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 		HxCleaning(i);
 		i += 1;
 	}
+	
 	CreateTimer(1.2, HxTimerRS, _, TIMER_FLAG_NO_MAPCHANGE);
+	
 }
 
 public Action HxTimerRS(Handle timer)
@@ -299,7 +278,7 @@ public Action TimerClientInfo(Handle timer, any client)
 	return Plugin_Stop;
 }
 
-public Action Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
+public void Event_PlayerDeath(Event event, const char[] name, bool dontBroadcast)
 {
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 	if (client)
@@ -327,7 +306,14 @@ public void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 			{
 				if (event.GetInt("oldteam") == 2)
 				{	/*	Игрок уходит в афк	*/
-					HxUnBackpack(client);
+					int iBot = HxBotXYZ(client);
+					if (GetClientTeam(iBot) == 2)
+					{
+						if (IsPlayerAlive(iBot))
+						{
+							HxUnBackpack(iBot);
+						}
+					}
 				}
 			}
 			if (iTeam == 2)
@@ -336,6 +322,42 @@ public void Event_PlayerTeam(Event event, const char[] name, bool dontBroadcast)
 			}
 		}
 	}
+}
+
+stock int HxBotXYZ(int &client)
+{
+	int i = 1;
+	int iC = -1;
+	float fXYZ1[3];
+	float fXYZ2[3];
+	GetClientAbsOrigin(client, fXYZ1);
+
+	while (i <= MaxClients)
+	{
+		if (IsClientInGame(i))
+		{
+			if (IsFakeClient(i))
+			{
+				GetClientAbsOrigin(i, fXYZ2);
+				if (fXYZ1[0] == fXYZ2[0])
+				{
+					if (fXYZ1[1] == fXYZ2[1])
+					{
+						iC = i;
+						break;
+					}
+				}
+			}
+		}
+		i += 1;
+	}
+
+	if (iC > 0)
+	{
+		return iC;
+	}
+
+	return client;
 }
 
 public Action HxTimerTeam2(Handle timer, any client)
@@ -447,6 +469,33 @@ public Action CMD_backpack(int client, int args)
 		}
 	}
 	return Plugin_Handled;
+}
+
+stock bool IsPlayerIncapped(int client)
+{
+	if (GetEntProp(client, Prop_Send, "m_isIncapacitated", 1))
+	{
+		return true;
+	}
+	return false;
+}
+
+stock int HxValidClient(int &client)
+{
+	if (IsClientInGame(client))
+	{
+		if (!IsFakeClient(client))
+		{
+			if (GetClientTeam(client) == 2)
+			{
+				if (IsPlayerAlive(client))
+				{
+					return 1;
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 stock void HxAddBackpack(int &client)
@@ -698,31 +747,4 @@ stock void HxUnBackpack(int &client)
 		}
 		ig_entity[client] = 0;
 	}
-}
-
-stock int HxValidClient(int &client)
-{
-	if (IsClientInGame(client))
-	{
-		if (!IsFakeClient(client))
-		{
-			if (GetClientTeam(client) == 2)
-			{
-				if (IsPlayerAlive(client))
-				{
-					return 1;
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-stock bool IsPlayerIncapped(int client)
-{
-	if (GetEntProp(client, Prop_Send, "m_isIncapacitated", 1))
-	{
-		return true;
-	}
-	return false;
 }
