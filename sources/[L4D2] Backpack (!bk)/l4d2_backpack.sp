@@ -1,3 +1,60 @@
+/**
+#pragma semicolon 1
+ * =============================================================================
+#include <sourcemod>
+ * Copyright https://steamcommunity.com/id/dr_lex/
+#include <sdktools>
+ *
+#include <sdkhooks>
+#pragma newdecls required
+ * =============================================================================
+
+ *
+char sg_slot0[MAXPLAYERS+1][64];
+ * This program is free software; you can redistribute it and/or modify it under
+int ig_prop0[MAXPLAYERS+1]; /* m_iClip1 */
+ * the terms of the GNU General Public License, version 3.0, as published by the
+int ig_prop1[MAXPLAYERS+1]; /* m_upgradeBitVec */
+ * Free Software Foundation.
+int ig_prop2[MAXPLAYERS+1]; /* m_nUpgradedPrimaryAmmoLoaded */
+ *
+int ig_prop3[MAXPLAYERS+1]; /* m_iAmmo */
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+int ig_prop4[MAXPLAYERS+1]; /* m_nSkin */
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+char sg_slot0m[MAXPLAYERS+1][64];
+ * details.
+int ig_prop0m[MAXPLAYERS+1]; /* m_iClip1 */
+ *
+int ig_prop1m[MAXPLAYERS+1]; /* m_upgradeBitVec */
+ * You should have received a copy of the GNU General Public License along with
+int ig_prop2m[MAXPLAYERS+1]; /* m_nUpgradedPrimaryAmmoLoaded */
+ * this program.  If not, see <www.gnu.org/licenses/>.
+int ig_prop3m[MAXPLAYERS+1]; /* m_iAmmo */
+ *
+int ig_prop4m[MAXPLAYERS+1]; /* m_nSkin */
+ * As a special exception, AlliedModders LLC gives you permission to link the
+
+ * code of this program (as well as its derivative works) to "Half-Life 2," the
+int ig_entity[MAXPLAYERS+1];
+ * "Source Engine," the "SourcePawn JIT," and any Game MODs that run on software
+int BackpackOwner[2048+1];
+ * by the Valve Corporation.  You must obey the GNU General Public License in
+int BackpackIndex[MAXPLAYERS+1];
+ * all respects for all other code used.  Additionally, AlliedModders LLC grants
+
+ * this exception to all derivative works.  AlliedModders LLC defines further
+int ig_time[MAXPLAYERS+1];
+ * exceptions, found in LICENSE.txt (as of this writing, version JULY-31-2007),
+
+ * or <www.sourcemod.net/license.php>.
+#define DEBUG 1
+ *
+#if DEBUG
+*/
+
 #pragma semicolon 1
 #include <sourcemod>
 #include <sdktools>
