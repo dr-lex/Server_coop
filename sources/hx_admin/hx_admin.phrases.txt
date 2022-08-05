@@ -1,0 +1,32 @@
+"Phrases"
+{
+	"Gag/Mute/Ban player"
+	{
+		"en"			"[GMB] Gag/Mute/Ban player"
+		"ru"			"[GMB] Отключить игроку Чат/Микрофон/Бан"
+	}
+	
+	"Mute Player"
+	{
+		"en"			"Mute Player"
+		"ru"			"Отключить игроку микрофон"
+	}
+	
+	"Gag Player"
+	{
+		"en"			"Gag Player"
+		"ru"			"Отключить игроку чат"
+	}
+	
+	"Ban Player"
+	{
+		"en"			"Ban Player"
+		"ru"			"Забанить игрока"
+	}
+	
+	"Teleport player"
+	{
+		"en"			"Teleport Player"
+		"ru"			"Телепорт игрока"
+	}
+}
