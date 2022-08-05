@@ -57,6 +57,8 @@ public void OnPluginStart()
 	
 	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/GagMuteBan.txt");
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/GagMuteBan.log");
+	
+	HxDelete();
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -238,6 +240,65 @@ public void OnClientPostAdminCheck(int client)
 	{
 		HxGetGagMuteBan(client);
 	}
+}
+
+void HxDelete()
+{
+	KeyValues hGM = new KeyValues("gagmute");
+	hGM.ImportFromFile(sg_file);
+	
+	char sTeamID[50];
+	int iDelete;
+	int iMute;
+	int iGag;
+	int iBan;
+	int iTime = GetTime();
+	
+	if (hGM.GotoFirstSubKey())
+	{
+		while (hGM.GetSectionName(sTeamID, sizeof(sTeamID)-1))
+		{
+			iMute = hGM.GetNum("mute", 0);
+			iGag = hGM.GetNum("gag", 0);
+			iBan = hGM.GetNum("ban", 0);
+			
+			iDelete = 1;
+			if (iMute > iTime)
+			{
+				iDelete = 0;
+			}
+			
+			if (iGag > iTime)
+			{
+				iDelete = 0;
+			}
+			
+			if (iBan > iTime)
+			{
+				iDelete = 0;
+			}
+			
+			if (iDelete)
+			{
+				if (hGM.DeleteThis() > 0)
+				{
+					LogToFileEx(sg_log, "Delete: %s", sTeamID);
+					continue;
+				}
+			}
+			
+			if (hGM.GotoNextKey())
+			{
+				continue;
+			}
+			
+			break;
+		}
+		
+		hGM.Rewind();
+		hGM.ExportToFile(sg_file);
+	}
+	delete hGM;
 }
 
 //==============================================
