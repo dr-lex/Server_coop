@@ -7,6 +7,10 @@
 char sg_log[160];
 
 int ig_minutes;
+int g_BeamSprite;
+int g_HaloSprite;
+#define SPRITE_BEAM		"materials/sprites/laserbeam.vmt"
+#define SPRITE_HALO		"materials/sprites/light_glow02.vmt"//новое так как halo01.vmt уже нету
 
 native int HxSetClientBan(int client, int iTime);
 native int HxSetClientGag(int client, int iTime);
@@ -19,7 +23,7 @@ public Plugin myinfo =
 	name = "[L4D2] Addition to the admin menu",
 	author = "dr lex",
 	description = "Add-on for the admin menu",
-	version = "1.1.3",
+	version = "1.1.4",
 	url = "https://steamcommunity.com/id/dr_lex/"
 };
 
@@ -33,6 +37,8 @@ public void OnPluginStart()
 	LoadTranslations("hx_admin.phrases");
 	ig_minutes = 1;
 	
+	RegAdminCmd("sm_teleport", CMD_teleport, ADMFLAG_BAN, "sm_addban <name> <minutes> or sm_addban to open Ban menu");
+	
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/GagMuteBan.log");
 	
 	/* Account for late loading */
@@ -41,6 +47,18 @@ public void OnPluginStart()
 	{
 		OnAdminMenuReady(topmenu);
 	}
+}
+
+public void OnMapStart()
+{
+	g_BeamSprite = PrecacheModel(SPRITE_BEAM);
+	g_HaloSprite = PrecacheModel(SPRITE_HALO);
+}
+
+public Action CMD_teleport(int client, int args)
+{
+	HxTeleportAll(client);
+	return Plugin_Handled;
 }
 
 public void OnAdminMenuReady(Handle aTopMenu)
@@ -58,6 +76,7 @@ public void OnAdminMenuReady(Handle aTopMenu)
 	
 	/* Build the "Player Commands" category */
 	TopMenuObject player_commands = hTopMenu.FindCategory(ADMINMENU_PLAYERCOMMANDS);
+	TopMenuObject server_commands = hTopMenu.FindCategory(ADMINMENU_SERVERCOMMANDS);
 	
 	if (player_commands != INVALID_TOPMENUOBJECT)
 	{
@@ -65,6 +84,10 @@ public void OnAdminMenuReady(Handle aTopMenu)
 		hTopMenu.AddItem("gag", AdminMenu_Gag, player_commands, "gag", ADMFLAG_CHAT);
 		hTopMenu.AddItem("mute", AdminMenu_Mute, player_commands, "mute", ADMFLAG_CHAT);
 		hTopMenu.AddItem("tele", AdminMenu_Tele, player_commands, "tele", ADMFLAG_CHAT);
+	}
+	if (server_commands != INVALID_TOPMENUOBJECT)
+	{
+		hTopMenu.AddItem("teleall", AdminMenu_TeleAll, server_commands, "teleall", ADMFLAG_CHAT);
 	}
 }
 
@@ -104,74 +127,11 @@ public void AdminMenu_Tele(TopMenu topmenu, TopMenuAction action, TopMenuObject 
 	}
 }
 
-/*
-void DisplayGagPlayerMenu(int client)
-{
-	Menu menu = new Menu(MenuHandler_GagPlayer);
-	
-	char title[100];
-	Format(title, sizeof(title), "%T:", "Gag/Mute player", client);
-	menu.SetTitle(title);
-	menu.ExitBackButton = true;
-	
-	AddTargetsToMenu(menu, client, true, false);
-	
-	menu.Display(client, MENU_TIME_FOREVER);
-}
-
-public int MenuHandler_HxAdmin(Menu menu, MenuAction action, int param1, int param2)
+public void AdminMenu_TeleAll(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
 {
 	switch (action)
 	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char sInfo[8];
-			bool found = menu.GetItem(param2, sInfo, sizeof(sInfo)-1);
-			if (found && param1)
-			{
-				if (IsClientInGame(param1))
-				{
-					if (!strcmp(sInfo, "ban", true))
-					{
-						HxAddBan(param1);
-					}
-					if (!strcmp(sInfo, "gag", true))
-					{
-						HxAddGag(param1);
-					}
-					if (!strcmp(sInfo, "mute", true))
-					{
-						HxAddMute(param1);
-					}
-				}
-			}
-		}
+		case TopMenuAction_DisplayOption: Format(buffer, maxlength, "%T", "Teleport All", param);
+		case TopMenuAction_SelectOption: HxTeleportAll(param);
 	}
-	return 0;
 }
-
-void DisplayGagMuteBanPlayerMenu(int client)
-{
-	Menu menu = new Menu(MenuHandler_HxAdmin);
-	
-	char title[100];
-	Format(title, sizeof(title), "%T:", "Gag/Mute/Ban player", client);
-	menu.SetTitle(title);
-	
-	Format(title, sizeof(title), "%T", "Ban Player", client);
-	menu.AddItem("ban", title);
-	
-	Format(title, sizeof(title), "%T", "Gag Player", client);
-	menu.AddItem("gag", title);
-	
-	Format(title, sizeof(title), "%T", "Mute Player", client);
-	menu.AddItem("mute", title);
-	
-	menu.ExitBackButton = true;	
-	menu.Display(client, MENU_TIME_FOREVER);
-}
-*/
