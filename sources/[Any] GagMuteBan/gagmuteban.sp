@@ -46,7 +46,7 @@ public Plugin myinfo =
 	name = "GagMuteBan",
 	author = "dr lex",
 	description = "gag & mute & ban",
-	version = "2.1.1",
+	version = "2.1.2",
 	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
@@ -57,7 +57,7 @@ public void OnPluginStart()
 	
 	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/GagMuteBan.txt");
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/GagMuteBan.log");
-	
+
 	HxDelete();
 }
 
@@ -218,7 +218,7 @@ void HxGetGagMuteBan(int &client)
 			if (iBan > iTime)
 			{
 				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-				PrintToChatAll("\x05[\x04GMB\x05] %N \x04Ban \x03(%s)", client, sTime);
+				//PrintToChatAll("\x05[\x04GMB\x05] %N \x04Ban \x03(%s)", client, sTime);
 				KickClient(client,"Banned (%s)", sTime);
 				iDelete = 0;
 			}
@@ -282,7 +282,7 @@ void HxDelete()
 			{
 				if (hGM.DeleteThis() > 0)
 				{
-					LogToFileEx(sg_log, "Delete: %s", sTeamID);
+					LogToFileEx(sg_log, "[GMB] Delete: %s", sTeamID);
 					continue;
 				}
 			}
@@ -316,9 +316,9 @@ public void HxClientTimeBanSteam(char[] sTeamID, int iminute)
 		int iBanOld = hGM.GetNum("ban", 0);
 		iBan = iBanOld + (iminute * 60);
 		hGM.SetNum("ban", iBan);
-
+		
 		FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-		LogToFileEx(sg_log, "Сonsole Ban: %s, %s", sTeamID, sTime);
+		LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
 	}
 	else
 	{
@@ -326,9 +326,9 @@ public void HxClientTimeBanSteam(char[] sTeamID, int iminute)
 		
 		iBan = GetTime() + (iminute * 60);
 		hGM.SetNum("ban", iBan);
-		
+	
 		FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-		LogToFileEx(sg_log, "Сonsole Ban: %s, %s", sTeamID, sTime);
+		LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
 	}
 	
 	hGM.Rewind();
@@ -409,12 +409,11 @@ public void HxClientUnBanSteam(char[] sTeamID)
 			hGM.DeleteThis();
 			hGM.Rewind();
 			hGM.ExportToFile(sg_file);
-			
-			LogToFileEx(sg_log, "Сonsole UnBan: %s", sTeamID);
+			LogToFileEx(sg_log, "[GMB] Сonsole UnBan: %s", sTeamID);
 		}
 		else
 		{
-			LogToFileEx(sg_log, "Сonsole UnBan: %s Not in the list", sTeamID);
+			LogToFileEx(sg_log, "[GMB] Сonsole UnBan: %s Not in the list", sTeamID);
 		}
 	}
 	delete hGM;
