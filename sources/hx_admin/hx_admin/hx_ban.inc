@@ -47,7 +47,6 @@ public int MenuHandler_Ban(Menu menu, MenuAction action, int param1, int param2)
 						if (HxSetClientBan(client, ig_minutes))
 						{
 							LogToFileEx(sg_log, "Ban: %N (Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-							//KickClient(client, "%d Min ban.", ig_minutes);
 							PrintToChatAll("\x05%d min ban:\x04 %N", ig_minutes, client);
 						}
 					}

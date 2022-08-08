@@ -47,7 +47,6 @@ public int MenuHandler_Gag(Menu menu, MenuAction action, int param1, int param2)
 						if (HxSetClientGag(client, ig_minutes))
 						{
 							LogToFileEx(sg_log, "gag: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-							//ServerCommand("sm_gag #%d", GetClientUserId(client));
 							PrintToChatAll("\x05%d min gag:\x04 %N", ig_minutes, client);
 						}
 					}

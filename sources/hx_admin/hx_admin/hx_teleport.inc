@@ -76,3 +76,28 @@ public void HxTeleport(int &client)
 	h7.ExitBackButton = true;
 	h7.Display(client, 30);
 }
+
+public void HxTeleportAll(int &client)
+{
+	float trspos[3];
+	trspos[2] += 50;
+	GetEntPropVector(client, Prop_Send, "m_vecOrigin", trspos);
+	
+	TE_SetupBeamRingPoint(trspos, 10.0, 500.0, g_BeamSprite, g_HaloSprite, 0, 10, 0.3, 10.0, 0.5, {230, 230, 230, 100}, 400, 0);
+	TE_SendToAll();
+	
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (IsClientInGame(i) && GetClientTeam(i) == 2 && IsPlayerAlive(i))
+		{
+			float fOtherPos[3];
+			GetEntPropVector(i, Prop_Send, "m_vecOrigin", fOtherPos);
+			if (GetVectorDistance(trspos, fOtherPos) < 500.0)
+			{
+				continue;
+			}
+			
+			Teleport(client, i);
+		}
+	}
+}

@@ -47,7 +47,6 @@ public int MenuHandler_Mute(Menu menu, MenuAction action, int param1, int param2
 						if (HxSetClientMute(client, ig_minutes))
 						{
 							LogToFileEx(sg_log, "mute: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-							//ServerCommand("sm_mute #%d", GetClientUserId(client));
 							PrintToChatAll("\x05%d min mute:\x04 %N", ig_minutes, client);
 						}
 					}
