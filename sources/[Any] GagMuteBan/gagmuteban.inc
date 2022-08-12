@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 /*
  *
- * Copyright 2011 - 2022 steamcommunity.com/profiles/76561198025355822/
+ * Copyright 2011 - 2022 github.com/dr-lex/Server_coop/tree/master/sources/
  * Plugin GagMuteBan
  *
 */
