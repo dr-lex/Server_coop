@@ -44,9 +44,9 @@ char sg_log[160];
 public Plugin myinfo =
 {
 	name = "GagMuteBan",
-	author = "dr lex",
+	author = "dr lex & MAKS",
 	description = "gag & mute & ban",
-	version = "2.1.2",
+	version = "2.2.0",
 	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
@@ -67,6 +67,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("HxSetClientGag", Native_HxSetClientGag);
 	CreateNative("HxSetClientMute", Native_HxSetClientMute);
 
+	RegPluginLibrary("gagmuteban");
 	return APLRes_Success;
 }
 
@@ -282,7 +283,6 @@ void HxDelete()
 			{
 				if (hGM.DeleteThis() > 0)
 				{
-					LogToFileEx(sg_log, "[GMB] Delete: %s", sTeamID);
 					continue;
 				}
 			}
