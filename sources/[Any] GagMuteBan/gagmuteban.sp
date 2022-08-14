@@ -31,6 +31,7 @@
  * native int HxSetClientBan(int client, int iTime);
  * native int HxSetClientGag(int client, int iTime);
  * native int HxSetClientMute(int client, int iTime);
+ * native int HxSetClientVote(int client, int iTime);
  *
 */
 
@@ -41,18 +42,22 @@
 char sg_file[160];
 char sg_log[160];
 
+int iPlay[MAXPLAYERS+1];
+
 public Plugin myinfo =
 {
-	name = "GagMuteBan",
+	name = "[ANY] GagMuteBan",
 	author = "dr lex & MAKS",
 	description = "gag & mute & ban",
-	version = "2.2.0",
+	version = "2.2.1",
 	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
 public void OnPluginStart()
 {
+	RegConsoleCmd("callvote", Callvote_Handler);
 	RegAdminCmd("sm_addban",  CMD_addban,  ADMFLAG_BAN,  "sm_addban <minutes> <STEAM_ID>");
+	RegAdminCmd("sm_addvote",  CMD_addvote,  ADMFLAG_BAN,  "sm_addvote <minutes> <STEAM_ID>");
 	RegAdminCmd("sm_unban", CMD_unban, ADMFLAG_UNBAN, "sm_unban <STEAM_ID>");
 	
 	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/GagMuteBan.txt");
@@ -66,6 +71,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	CreateNative("HxSetClientBan", Native_HxSetClientBan);
 	CreateNative("HxSetClientGag", Native_HxSetClientGag);
 	CreateNative("HxSetClientMute", Native_HxSetClientMute);
+	CreateNative("HxSetClientVote", Native_HxSetClientVote);
 
 	RegPluginLibrary("gagmuteban");
 	return APLRes_Success;
@@ -122,6 +128,23 @@ stock int Native_HxSetClientMute(Handle plugin, int numParams)
 	return 0;
 }
 
+stock int Native_HxSetClientVote(Handle plugin, int numParams)
+{
+	int client = GetNativeCell(1);
+	if (client < 1 || client > MaxClients)
+	{
+		return ThrowNativeError(SP_ERROR_NATIVE, "Invalid client index %d", client);
+	}
+	
+	int iTime = GetNativeCell(2);
+	if (iTime > 0)
+	{
+		HxClientTime(client, iTime, 4);
+	}
+	
+	return 0;
+}
+
 public int HxClientTime(int &client, int iminute, int iNum)
 {
 	if (IsClientInGame(client))
@@ -157,6 +180,12 @@ public int HxClientTime(int &client, int iminute, int iNum)
 					iBan = iBanOld + (iminute * 60);
 					hGM.SetNum("mute", iBan);
 				}
+				case 4:
+				{
+					iBanOld = hGM.GetNum("vote", 0);
+					iBan = iBanOld + (iminute * 60);
+					hGM.SetNum("vote", iBan);
+				}
 			}
 		}
 		else
@@ -169,6 +198,7 @@ public int HxClientTime(int &client, int iminute, int iNum)
 				case 1: hGM.SetNum("ban", iBan);
 				case 2: hGM.SetNum("gag", iBan);
 				case 3: hGM.SetNum("mute", iBan);
+				case 4: hGM.SetNum("vote", iBan);
 			}
 		}
 		
@@ -188,6 +218,7 @@ void HxGetGagMuteBan(int &client)
 	KeyValues hGM = new KeyValues("gagmute");
 	if (hGM.ImportFromFile(sg_file))
 	{
+		iPlay[client] = 0;
 		int iDelete = 1;
 		char sTime[24];
 		char sTeamID[32];
@@ -195,10 +226,19 @@ void HxGetGagMuteBan(int &client)
 		
 		if (hGM.JumpToKey(sTeamID))
 		{
+			int iVote = hGM.GetNum("vote", 0);
 			int iMute = hGM.GetNum("mute", 0);
 			int iGag = hGM.GetNum("gag", 0);
 			int iBan = hGM.GetNum("ban", 0);
 			int iTime = GetTime();
+			
+			if (iVote > iTime)
+			{
+				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iVote);
+				PrintToChat(client, "\x05[\x04GMB\x05] \x04Ban Vote \x03(%s)", sTime);
+				iPlay[client] = 1;
+				iDelete = 0;
+			}
 			
 			if (iMute > iTime)
 			{
@@ -250,6 +290,7 @@ void HxDelete()
 	
 	char sTeamID[50];
 	int iDelete;
+	int iVote;
 	int iMute;
 	int iGag;
 	int iBan;
@@ -259,11 +300,17 @@ void HxDelete()
 	{
 		while (hGM.GetSectionName(sTeamID, sizeof(sTeamID)-1))
 		{
+			iVote = hGM.GetNum("vote", 0);
 			iMute = hGM.GetNum("mute", 0);
 			iGag = hGM.GetNum("gag", 0);
 			iBan = hGM.GetNum("ban", 0);
 			
 			iDelete = 1;
+			if (iVote > iTime)
+			{
+				iDelete = 0;
+			}			
+			
 			if (iMute > iTime)
 			{
 				iDelete = 0;
@@ -303,32 +350,59 @@ void HxDelete()
 
 //==============================================
 
-public void HxClientTimeBanSteam(char[] sTeamID, int iminute)
+public void HxClientTimeBanSteam(char[] sTeamID, int iminute, int iNum)
 {
 	KeyValues hGM = new KeyValues("gagmute");
 	hGM.ImportFromFile(sg_file);
 	
 	char sTime[24];
-	int iBan;
+	int iBan = 0;
 	
 	if (hGM.JumpToKey(sTeamID))
 	{
-		int iBanOld = hGM.GetNum("ban", 0);
-		iBan = iBanOld + (iminute * 60);
-		hGM.SetNum("ban", iBan);
-		
-		FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-		LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
+		int iBanOld = 0;
+		switch (iNum)
+		{
+			case 1:
+			{
+				iBanOld = hGM.GetNum("ban", 0);
+				iBan = iBanOld + (iminute * 60);
+				hGM.SetNum("ban", iBan);
+				
+				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+				LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
+			}
+			case 2:
+			{
+				iBanOld = hGM.GetNum("vote", 0);
+				iBan = iBanOld + (iminute * 60);
+				hGM.SetNum("vote", iBan);
+				
+				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+				LogToFileEx(sg_log, "[GMB] Сonsole Ban Vote: %s, %s", sTeamID, sTime);
+			}
+		}
 	}
 	else
 	{
 		hGM.JumpToKey(sTeamID, true);
 		
 		iBan = GetTime() + (iminute * 60);
-		hGM.SetNum("ban", iBan);
-	
-		FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-		LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
+		switch (iNum)
+		{
+			case 1:
+			{
+				hGM.SetNum("ban", iBan);
+				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+				LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
+			}
+			case 2:
+			{
+				hGM.SetNum("vote", iBan);
+				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+				LogToFileEx(sg_log, "[GMB] Сonsole Ban Vote: %s, %s", sTeamID, sTime);
+			}
+		}
 	}
 	
 	hGM.Rewind();
@@ -386,7 +460,68 @@ public Action CMD_addban(int client, int args)
 	
 	int minutes = StringToInt(minute);
 	
-	HxClientTimeBanSteam(authid, minutes);
+	HxClientTimeBanSteam(authid, minutes, 1);
+	for (int i = 1 ; i <= MaxClients ; ++i)
+	{
+		if (IsClientInGame(i) && !IsFakeClient(i))
+		{
+			HxGetGagMuteBan(i);
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action CMD_addvote(int client, int args)
+{
+	if (args < 1)
+	{
+		ReplyToCommand(client, "Usage: sm_addvote <minutes> <STEAM_ID>");
+		return Plugin_Handled;
+	}
+	
+	char arg_string[256];
+	char minute[50];
+	char authid[50];
+	
+	GetCmdArgString(arg_string, sizeof(arg_string));
+	
+	int len, total_len;
+	
+	/* Get minute */
+	if ((len = BreakString(arg_string, minute, sizeof(minute))) == -1)
+	{
+		ReplyToCommand(client, "Usage: sm_addvote <minutes> <steamid>");
+		return Plugin_Handled;
+	}	
+	total_len += len;
+	
+	/* Get steamid */
+	if ((len = BreakString(arg_string[total_len], authid, sizeof(authid))) != -1)
+	{
+		total_len += len;
+	}
+	else
+	{
+		total_len = 0;
+		arg_string[0] = '\0';
+	}
+	
+	/* Verify steamid */
+	bool idValid = false;
+	if (!strncmp(authid, "STEAM_", 6) && authid[7] == ':')
+	{
+		idValid = true;
+	}
+	
+	if (!idValid)
+	{
+		ReplyToCommand(client, "Invalid SteamID specified (Must be STEAM_ )");
+		return Plugin_Handled;
+	}
+	
+	int minutes = StringToInt(minute);
+	
+	HxClientTimeBanSteam(authid, minutes, 2);
 	for (int i = 1 ; i <= MaxClients ; ++i) 
 	{
 		if (IsClientInGame(i) && !IsFakeClient(i))
@@ -459,4 +594,19 @@ public Action CMD_unban(int client, int args)
 	
 	HxClientUnBanSteam(authid);
 	return Plugin_Handled;
+}
+
+//===========================================
+
+public Action Callvote_Handler(int client, int args)
+{
+	if (client)
+	{
+		if (iPlay[client])
+		{
+			PrintToChat(client, "[GMB] Vote access denied!");
+			return Plugin_Handled;
+		}
+	}
+	return Plugin_Continue;
 }
