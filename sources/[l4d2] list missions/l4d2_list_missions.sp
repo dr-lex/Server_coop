@@ -45,21 +45,17 @@ char sNumFileTxt[128];
 char sName[256];
 int iList;
 
-ConVar lm_update_enable;
-
 public Plugin myinfo = 
 {
 	name = "[l4d2] List of missions",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Automatic reading of all available campaigns",
-	version = "1.2",
+	version = "1.2.1",
 	url = ""
 };
 
 public void OnPluginStart()
 {
-	lm_update_enable = CreateConVar("lm_update_enable", "0", "1 - Enable/ 0 - Disable. Update list of files when starting or restarting the server", FCVAR_NONE);
-	
 	RegAdminCmd("sm_amaps", CMD_AMaps, ADMFLAG_UNBAN, "");
 	RegAdminCmd("sm_aupdate", CMD_AUpdate, ADMFLAG_UNBAN, "");
 	RegConsoleCmd("sm_votedlc", CMD_VoteDlc, "", 0);
@@ -68,15 +64,6 @@ public void OnPluginStart()
 	if (LibraryExists("adminmenu") && ((hTop_Menu = GetAdminTopMenu()) != null))
 	{
 		OnAdminMenuReady(hTop_Menu);
-	}
-}
-
-public void OnMapStart()
-{
-	if (lm_update_enable.IntValue > 0)
-	{
-		HxDelMissionsList();
-		HxUpdateMissionsList();
 	}
 }
 
@@ -160,12 +147,6 @@ public Action CMD_AUpdate(int client, int args)
 
 public Action CMD_VoteDlc(int client, int args)
 {
-	if (lm_update_enable.IntValue > 0)
-	{
-		HxDelMissionsList();
-		HxUpdateMissionsList();
-	}
-
 	ConVar g_Mode = FindConVar("mp_gamemode");
 	GetConVarString(g_Mode, sMode, sizeof(sMode));
 	
@@ -621,6 +602,10 @@ stock void HxDelMissionsList()
 
 stock void HxUpdateMissionsList()
 {
+	char dirName[256];
+	Format(dirName, sizeof(dirName), "addons/sourcemod/data/missions");
+	CreateDirectory(dirName, 511);
+	
 	DirectoryListing dirList = OpenDirectory("missions", true, NULL_STRING);
 	if (dirList != null)
 	{
