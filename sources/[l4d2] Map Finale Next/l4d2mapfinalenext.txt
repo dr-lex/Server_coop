@@ -1,0 +1,14 @@
+"Games"
+{
+	"left4dead2"
+	{
+		"Signatures"
+		{
+			"ResetTransitioned"
+			{
+				"library"	"server"
+				"linux"	"@_Z26ResetTransitionedSurvivorsv"
+			}
+		}
+	}
+}
