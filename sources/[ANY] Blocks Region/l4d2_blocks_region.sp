@@ -17,12 +17,15 @@ static char sCountryBlock[][] =
 	"China",
 	"Colombia",
 	"Costa Rica",
+	"Djibouti",
+	"Dominican Republic",
 	"Ecuador",
 	"Hong Kong",
 	"Indonesia",
 	"Japan",
 	"Macao",
 	"Malaysia",
+	"Nicaragua",
 	"Paraguay",
 	"Peru",
 	"Philippines",
@@ -42,14 +45,17 @@ static char sCountry[][] =
 	"Åland",
 	"Albania",
 	"Algeria",
+	"Armenia",
 	"Austria",
 	"Azerbaijan",
+	"Bahrain",
 	"Belarus",
 	"Belgium",
 	"Bosnia and Herzegovina",
 	"Bulgaria",
 	"Canada",
 	"Croatia",
+	"Cyprus",
 	"Czechia",
 	"Denmark",
 	"Egypt",
@@ -59,12 +65,16 @@ static char sCountry[][] =
 	"France",
 	"Georgia",
 	"Germany",
+	"Ghana",
 	"Greece",
 	"Guatemala",
+	"Hashemite Kingdom of Jordan",
+	"Honduras",
 	"Hungary",
 	"India",
 	"Iran",
 	"Iraq",
+	"Isle of Man",
 	"Ireland",
 	"Israel",
 	"Italy",
@@ -72,13 +82,18 @@ static char sCountry[][] =
 	"Kuwait",
 	"Kyrgyzstan",
 	"Latvia",
+	"Libya",
 	"Malta",
 	"Mexico",
 	"Mongolia",
+	"Montenegro",
 	"Morocco",
 	"Netherlands",
+	"Nigeria",
 	"Norway",
 	"Oman",
+	"Panama",
+	"Palestine",
 	"Pakistan",
 	"Poland",
 	"Portugal",
@@ -112,7 +127,7 @@ public Plugin myinfo =
 	name = "[ANY] Blocks Region",
 	author = "dr lex",
 	description = "Blocks countries by region",
-	version = "1.0.5",
+	version = "1.0.8",
 	url = ""
 }
 
@@ -125,26 +140,30 @@ public bool OnClientConnect(int client, char[] rejectmsg, int maxlen)
 {
 	if (!IsFakeClient(client))
 	{
-		char IP[16], Country[64];
+		char IP[16], Country[128];
 		GetClientIP(client, IP, sizeof(IP), true);
 		GeoipCountry(IP, Country, sizeof(Country));
-		for (int count = 0; count <= 26; count++)
+		for (int count = 0; count <= 29; count++)
 		{
 			if (StrEqual(Country, sCountryBlock[count]))
 			{
-				Format(rejectmsg, maxlen, "The server is not available in your region =(");
+				Format(rejectmsg, maxlen, "The server is not available in your region =( \n Ping > 200");
 				return false;
 			}
 		}
 		
-		for (int count = 0; count <= 65; count++)
+		for (int count = 0; count <= 77; count++)
 		{
 			if (StrEqual(Country, sCountry[count]))
 			{
 				return true;
 			}
 		}
-		LogToFileEx(sg_log, "[New] %s (%N) ip %s", Country, client, IP);
+		
+		if (!StrEqual(Country, ""))
+		{
+			LogToFileEx(sg_log, "[New] %s (%N) ip %s", Country, client, IP);
+		}
 	}
 	return true;
 }
