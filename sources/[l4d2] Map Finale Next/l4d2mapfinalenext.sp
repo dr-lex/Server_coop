@@ -1,4 +1,5 @@
 #include <sourcemod>
+#include <sdktools>
 #pragma newdecls required
 
 #tryinclude <l4d2_changelevel>
@@ -11,13 +12,18 @@ int seconds;
 char NextCampaign[53];
 char sMapName[40];
 
+#define FIX_ENABLED 1
+#if FIX_ENABLED
+	Handle hResetTransitioned = null;
+#endif
+
 public Plugin myinfo = 
 {
 	name = "[l4d2] Map Finale Next",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Rotation of companies in the list, full loading of players when changing cards",
-	version = "2.8.1",
-	url = ""
+	version = "2.9.1",
+	url = "https://steamcommunity.com/id/dr_lex/"
 };
 
 public void OnPluginStart()
@@ -28,6 +34,34 @@ public void OnPluginStart()
 	HookEvent("finale_win", Event_FinalWin);
 	HookEvent("round_start", Event_RoundStart);
 	HookEvent("round_end", Event_RoundEnd);
+	
+	HookUserMessage(GetUserMessageId("DisconnectToLobby"), OnDisconnectToLobby, true);
+	
+#if FIX_ENABLED
+	Handle hConf = LoadGameConfigFile("l4d2mapfinalenext");
+	if (hConf)
+	{
+		StartPrepSDKCall(SDKCall_Static);
+		PrepSDKCall_SetFromConf(hConf, SDKConf_Signature, "ResetTransitioned");
+		hResetTransitioned = EndPrepSDKCall();
+		if (!hResetTransitioned)
+		{
+			SetFailState("error l4d2mapfinalenext.txt");
+		}
+
+		delete hConf;
+	}
+#endif
+}
+
+public Action OnDisconnectToLobby(UserMsg msg_id, Handle bf, const int[] players, int playersNum, bool reliable, bool init)
+{
+	int iVoteController = FindEntityByClassname(-1, "vote_controller");
+	if (!IsValidEntity(iVoteController) || GetEntProp(iVoteController, Prop_Send, "m_activeIssueIndex") == 4)
+	{
+		return Plugin_Continue;
+	}
+	return Plugin_Handled;
 }
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -41,7 +75,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
 	return APLRes_Success;
 }
 
-stock int NextMission()
+stock void NextMission()
 {
 	if (StrEqual(sg_Map, "c1m1_hotel", false) || StrEqual(sg_Map, "c1m2_streets", false) || StrEqual(sg_Map, "c1m3_mall", false) || StrEqual(sg_Map, "c1m4_atrium", false))
 	{
@@ -115,8 +149,8 @@ stock int NextMission()
 	}
 	else
 	{
-		NextCampaign = "Dead Center";
-		NextCampaignVote = "L4D2C1";
+		NextCampaign = "Random";
+		NextCampaignVote = "RANDOM";
 	}
 }
 
@@ -125,15 +159,27 @@ public void OnMapStart()
 	GetCurrentMap(sg_Map, sizeof(sg_Map)-1);
 	round_end_repeats = 0;
 	seconds = 5;
+	
+#if FIX_ENABLED
+	CreateTimer(30.0, HxTimer, _, TIMER_FLAG_NO_MAPCHANGE);
+#endif
 }
 
-public Action Event_FinalWin(Event event, const char[] name, bool dontBroadcast)
+#if FIX_ENABLED
+public Action HxTimer(Handle timer)
+{
+	SDKCall(hResetTransitioned);
+	return Plugin_Stop;
+}
+#endif
+
+public void Event_FinalWin(Event event, const char[] name, bool dontBroadcast)
 {
 	PrintNextCampaign();
 	CreateTimer(10.0, ChangeCampaign, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+public void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	IsRoundStarted = 1;
 	if (round_end_repeats > 5)
@@ -152,7 +198,6 @@ public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcas
 			PrintToChatAll("\x05%t", "The mission begins!");
 		}
 	}
-	return Plugin_Continue;
 }
 
 public Action TimerInfo(Handle timer)
@@ -172,9 +217,10 @@ public Action ChangeCampaign(Handle timer, any client)
 {
 	ChangeCampaignEx();
 	round_end_repeats = 0;
+	return Plugin_Stop;
 }
 
-public Action Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
+public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
 {
 	if (!IsRoundStarted)
 	{
@@ -190,61 +236,77 @@ public void ChangeCampaignEx()
 	{
 		sMapName = "c1m1_hotel";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C2", false))
+	if (StrEqual(NextCampaignVote, "L4D2C2", false))
 	{
 		sMapName = "c2m1_highway";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C3", false))
+	if (StrEqual(NextCampaignVote, "L4D2C3", false))
 	{
 		sMapName = "c3m1_plankcountry";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C4", false))
+	if (StrEqual(NextCampaignVote, "L4D2C4", false))
 	{
 		sMapName = "c4m1_milltown_a";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C5", false))
+	if (StrEqual(NextCampaignVote, "L4D2C5", false))
 	{
 		sMapName = "c5m1_waterfront";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C6", false))
+	if (StrEqual(NextCampaignVote, "L4D2C6", false))
 	{
 		sMapName = "c6m1_riverbank";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C7", false))
+	if (StrEqual(NextCampaignVote, "L4D2C7", false))
 	{
 		sMapName = "c7m1_docks";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C8", false))
+	if (StrEqual(NextCampaignVote, "L4D2C8", false))
 	{
 		sMapName = "c8m1_apartment";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C9", false))
+	if (StrEqual(NextCampaignVote, "L4D2C9", false))
 	{
 		sMapName = "c9m1_alleys";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C10", false))
+	if (StrEqual(NextCampaignVote, "L4D2C10", false))
 	{
 		sMapName = "c10m1_caves";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C11", false))
+	if (StrEqual(NextCampaignVote, "L4D2C11", false))
 	{
 		sMapName = "c11m1_greenhouse";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C12", false))
+	if (StrEqual(NextCampaignVote, "L4D2C12", false))
 	{
 		sMapName = "c12m1_hilltop";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C13", false))
+	if (StrEqual(NextCampaignVote, "L4D2C13", false))
 	{
 		sMapName = "c13m1_alpinecreek";
 	}
-	else if (StrEqual(NextCampaignVote, "L4D2C14", false))
+	if (StrEqual(NextCampaignVote, "L4D2C14", false))
 	{
 		sMapName = "c14m1_junkyard";
 	}
-	else
+	if (StrEqual(NextCampaignVote, "RANDOM", false))
 	{
-		sMapName = "c1m1_hotel";
+		switch(GetRandomInt(1, 14))
+		{
+			case 1: sMapName = "c1m1_hotel";
+			case 2: sMapName = "c2m1_highway";
+			case 3: sMapName = "c3m1_plankcountry";
+			case 4: sMapName = "c4m1_milltown_a";
+			case 5: sMapName = "c5m1_waterfront";
+			case 6: sMapName = "c6m1_riverbank";
+			case 7: sMapName = "c7m1_docks";
+			case 8: sMapName = "c8m1_apartment";
+			case 9: sMapName = "c9m1_alleys";
+			case 10: sMapName = "c10m1_caves";
+			case 11: sMapName = "c11m1_greenhouse";
+			case 12: sMapName = "c12m1_hilltop";
+			case 13: sMapName = "c13m1_alpinecreek";
+			case 14: sMapName = "c14m1_junkyard";
+		}
 	}
 	
 #if defined _l4d2_changelevel_included
