@@ -18,6 +18,12 @@
 		"ru"			"Отключить игроку чат"
 	}
 	
+	"Vote Player"
+	{
+		"en"			"Block Vote Player"
+		"ru"			"Блокировать голосование игрока"
+	}
+	
 	"Ban Player"
 	{
 		"en"			"Ban Player"
@@ -28,5 +34,17 @@
 	{
 		"en"			"Teleport Player"
 		"ru"			"Телепорт игрока"
+	}
+	
+	"Teleport All"
+	{
+		"en"			"Teleport All Player"
+		"ru"			"Телепорт всех игроков"
+	}
+	
+	"List of player bans"
+	{
+		"en"			"List of player bans"
+		"ru"			"Список запретов игроков"
 	}
 }
