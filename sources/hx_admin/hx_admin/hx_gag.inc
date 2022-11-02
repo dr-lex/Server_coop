@@ -44,11 +44,9 @@ public int MenuHandler_Gag(Menu menu, MenuAction action, int param1, int param2)
 				{
 					if (IsClientInGame(client))
 					{
-						if (HxSetClientGag(client, ig_minutes))
-						{
-							LogToFileEx(sg_log, "gag: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-							PrintToChatAll("\x05%d min gag:\x04 %N", ig_minutes, client);
-						}
+						HxSetClientGag(client, ig_minutes);
+						LogToFileEx(sg_log, "gag: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
+						PrintToChatAll("\x05%d min gag:\x04 %N", ig_minutes, client);
 					}
 				}
 			}

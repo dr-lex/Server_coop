@@ -5,6 +5,7 @@
 #pragma newdecls required
 
 char sg_log[160];
+char sg_file[160];
 
 int ig_minutes;
 int g_BeamSprite;
@@ -15,6 +16,7 @@ int g_HaloSprite;
 native int HxSetClientBan(int client, int iTime);
 native int HxSetClientGag(int client, int iTime);
 native int HxSetClientMute(int client, int iTime);
+native int HxSetClientVote(int client, int iTime);
 
 TopMenu hTopMenu;
 
@@ -23,14 +25,16 @@ public Plugin myinfo =
 	name = "[L4D2] Addition to the admin menu",
 	author = "dr lex",
 	description = "Add-on for the admin menu",
-	version = "1.1.4",
+	version = "1.2.0",
 	url = "https://steamcommunity.com/id/dr_lex/"
 };
 
 #include "hx_admin/hx_ban.inc"
 #include "hx_admin/hx_gag.inc"
 #include "hx_admin/hx_mute.inc"
+#include "hx_admin/hx_vote.inc"
 #include "hx_admin/hx_teleport.inc"
+#include "hx_admin/hx_unban.inc"
 
 public void OnPluginStart()
 {
@@ -40,6 +44,7 @@ public void OnPluginStart()
 	RegAdminCmd("sm_teleport", CMD_teleport, ADMFLAG_BAN, "sm_addban <name> <minutes> or sm_addban to open Ban menu");
 	
 	BuildPath(Path_SM, sg_log, sizeof(sg_log)-1, "logs/GagMuteBan.log");
+	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/GagMuteBan.txt");
 	
 	/* Account for late loading */
 	TopMenu topmenu;
@@ -83,11 +88,13 @@ public void OnAdminMenuReady(Handle aTopMenu)
 		hTopMenu.AddItem("ban", AdminMenu_Ban, player_commands, "ban", ADMFLAG_CHAT);
 		hTopMenu.AddItem("gag", AdminMenu_Gag, player_commands, "gag", ADMFLAG_CHAT);
 		hTopMenu.AddItem("mute", AdminMenu_Mute, player_commands, "mute", ADMFLAG_CHAT);
+		hTopMenu.AddItem("vote", AdminMenu_Vote, player_commands, "vote", ADMFLAG_CHAT);
 		hTopMenu.AddItem("tele", AdminMenu_Tele, player_commands, "tele", ADMFLAG_CHAT);
 	}
 	if (server_commands != INVALID_TOPMENUOBJECT)
 	{
 		hTopMenu.AddItem("teleall", AdminMenu_TeleAll, server_commands, "teleall", ADMFLAG_CHAT);
+		hTopMenu.AddItem("listban", AdminMenu_ListBan, server_commands, "listban", ADMFLAG_CHAT);
 	}
 }
 
@@ -115,6 +122,24 @@ public void AdminMenu_Mute(TopMenu topmenu, TopMenuAction action, TopMenuObject 
 	{
 		case TopMenuAction_DisplayOption: Format(buffer, maxlength, "[GMB] %T", "Mute Player", param);
 		case TopMenuAction_SelectOption: HxAddMute(param);
+	}
+}
+
+public void AdminMenu_Vote(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
+{
+	switch (action)
+	{
+		case TopMenuAction_DisplayOption: Format(buffer, maxlength, "[GMB] %T", "Vote Player", param);
+		case TopMenuAction_SelectOption: HxAddVote(param);
+	}
+}
+
+public void AdminMenu_ListBan(TopMenu topmenu, TopMenuAction action, TopMenuObject object_id, int param, char[] buffer, int maxlength)
+{
+	switch (action)
+	{
+		case TopMenuAction_DisplayOption: Format(buffer, maxlength, "[GMB] %T", "List of player bans", param);
+		case TopMenuAction_SelectOption: HxListBan(param);
 	}
 }
 

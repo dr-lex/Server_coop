@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-only
-#if defined _hx_mute_included
+#if defined _hx_vote_included
  #endinput
 #endif
-#define _hx_mute_included
+#define _hx_vote_included
 
-static char sMemu_TimeMute[][][] =
+static char sMemu_TimeVote[][][] =
 {
 	{"5",			"5 mins"},
 	{"30",			"30 mins"},
@@ -24,7 +24,7 @@ static char sMemu_TimeMute[][][] =
 	{"525600", 		"365 days"}
 };
 
-public int MenuHandler_Mute(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_Vote(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -44,9 +44,9 @@ public int MenuHandler_Mute(Menu menu, MenuAction action, int param1, int param2
 				{
 					if (IsClientInGame(client))
 					{
-						HxSetClientMute(client, ig_minutes);
-						LogToFileEx(sg_log, "mute: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
-						PrintToChatAll("\x05%d min mute:\x04 %N", ig_minutes, client);
+						HxSetClientVote(client, ig_minutes);
+						LogToFileEx(sg_log, "block vote: %N(Admin) -> %N -> %d minute(s)", param1, client, ig_minutes);
+						PrintToChatAll("\x05%d min block vote:\x04 %N", ig_minutes, client);
 					}
 				}
 			}
@@ -62,14 +62,14 @@ public int MenuHandler_Mute(Menu menu, MenuAction action, int param1, int param2
 	return 0;
 }
 
-public void HxMute(int &client)
+public void HxVote(int &client)
 {
 	char sName[32];
 	char sNumber[8];
 	int i = 1;
 
-	Menu h6 = new Menu(MenuHandler_Mute);
-	h6.SetTitle("Mute");
+	Menu h6 = new Menu(MenuHandler_Vote);
+	h6.SetTitle("Block Vote");
 
 	while (i <= MaxClients)
 	{
@@ -89,19 +89,19 @@ public void HxMute(int &client)
 	h6.Display(client, 30);
 }
 
-public void HxAddMute(int client)
+public void HxAddVote(int client)
 {
-	Menu menu = new Menu(MenuHandler_AddMute);
-	menu.SetTitle("Mute Time");
-	for (int i = 0; i < sizeof(sMemu_TimeMute); i++)
+	Menu menu = new Menu(MenuHandler_AddVote);
+	menu.SetTitle("Vote Time");
+	for (int i = 0; i < sizeof(sMemu_TimeVote); i++)
 	{
-		menu.AddItem(sMemu_TimeMute[i][0], sMemu_TimeMute[i][1]);
+		menu.AddItem(sMemu_TimeVote[i][0], sMemu_TimeVote[i][1]);
 	}
 	menu.ExitBackButton = true;
 	menu.Display(client, 30);
 }
 
-public int MenuHandler_AddMute(Menu menu, MenuAction action, int param1, int param2)
+public int MenuHandler_AddVote(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -119,7 +119,7 @@ public int MenuHandler_AddMute(Menu menu, MenuAction action, int param1, int par
 				if (iTime > 0)
 				{
 					ig_minutes = iTime;
-					HxMute(param1);
+					HxVote(param1);
 				}
 			}
 		}
