@@ -49,7 +49,7 @@ public Plugin myinfo =
 	name = "[ANY] GagMuteBan",
 	author = "dr lex & MAKS",
 	description = "gag & mute & ban",
-	version = "2.2.1",
+	version = "2.3.0",
 	url = "https://forums.alliedmods.net/showthread.php?p=2757254"
 };
 
@@ -150,6 +150,9 @@ public int HxClientTime(int &client, int iminute, int iNum)
 	if (IsClientInGame(client))
 	{
 		int iBan = 0;
+		char sTime[24];
+		char sNum[32];
+		char sName[64];
 		
 		KeyValues hGM = new KeyValues("gagmute");
 		hGM.ImportFromFile(sg_file);
@@ -157,50 +160,43 @@ public int HxClientTime(int &client, int iminute, int iNum)
 		char sTeamID[32];
 		GetClientAuthId(client, AuthId_Steam2, sTeamID, sizeof(sTeamID)-1);
 		
+		GetClientName(client, sName, sizeof(sName)-12);
+		
+		switch (iNum)
+		{
+			case 1: sNum = "ban";
+			case 2: sNum = "gag";
+			case 3: sNum = "mute";
+			case 4: sNum = "vote";
+		}
+		
 		if (hGM.JumpToKey(sTeamID))
 		{
 			int iBanOld = 0;
-			switch (iNum)
+			iBanOld = hGM.GetNum(sNum, 0);
+			if (iBanOld > 0)
 			{
-				case 1:
-				{
-					iBanOld = hGM.GetNum("ban", 0);
-					iBan = iBanOld + (iminute * 60);
-					hGM.SetNum("ban", iBan);
-				}
-				case 2:
-				{
-					iBanOld = hGM.GetNum("gag", 0);
-					iBan = iBanOld + (iminute * 60);
-					hGM.SetNum("gag", iBan);
-				}
-				case 3:
-				{
-					iBanOld = hGM.GetNum("mute", 0);
-					iBan = iBanOld + (iminute * 60);
-					hGM.SetNum("mute", iBan);
-				}
-				case 4:
-				{
-					iBanOld = hGM.GetNum("vote", 0);
-					iBan = iBanOld + (iminute * 60);
-					hGM.SetNum("vote", iBan);
-				}
+				iBan = iBanOld + (iminute * 60);
 			}
+			else
+			{
+				iBan = GetTime() + (iminute * 60);
+			}
+			
+			hGM.SetString("Name", sName);
+			hGM.SetNum(sNum, iBan);
 		}
 		else
 		{
 			hGM.JumpToKey(sTeamID, true);
 			
 			iBan = GetTime() + (iminute * 60);
-			switch (iNum)
-			{
-				case 1: hGM.SetNum("ban", iBan);
-				case 2: hGM.SetNum("gag", iBan);
-				case 3: hGM.SetNum("mute", iBan);
-				case 4: hGM.SetNum("vote", iBan);
-			}
+			hGM.SetString("Name", sName);
+			hGM.SetNum(sNum, iBan);
 		}
+		
+		FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+		LogToFileEx(sg_log, "[GMB] Add command %s: %s, %s", sNum, sTeamID, sTime);
 		
 		hGM.Rewind();
 		hGM.ExportToFile(sg_file);
@@ -355,55 +351,40 @@ public void HxClientTimeBanSteam(char[] sTeamID, int iminute, int iNum)
 	KeyValues hGM = new KeyValues("gagmute");
 	hGM.ImportFromFile(sg_file);
 	
-	char sTime[24];
 	int iBan = 0;
+	char sTime[24];
+	char sNum[32];
+	
+	switch (iNum)
+	{
+		case 1: sNum = "ban";
+		case 2: sNum = "vote";
+	}
 	
 	if (hGM.JumpToKey(sTeamID))
 	{
 		int iBanOld = 0;
-		switch (iNum)
+		iBanOld = hGM.GetNum(sNum, 0);
+		if (iBanOld > 0)
 		{
-			case 1:
-			{
-				iBanOld = hGM.GetNum("ban", 0);
-				iBan = iBanOld + (iminute * 60);
-				hGM.SetNum("ban", iBan);
-				
-				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-				LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
-			}
-			case 2:
-			{
-				iBanOld = hGM.GetNum("vote", 0);
-				iBan = iBanOld + (iminute * 60);
-				hGM.SetNum("vote", iBan);
-				
-				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-				LogToFileEx(sg_log, "[GMB] Сonsole Ban Vote: %s, %s", sTeamID, sTime);
-			}
+			iBan = iBanOld + (iminute * 60);
 		}
+		else
+		{
+			iBan = GetTime() + (iminute * 60);
+		}
+		hGM.SetNum(sNum, iBan);
 	}
 	else
 	{
 		hGM.JumpToKey(sTeamID, true);
 		
 		iBan = GetTime() + (iminute * 60);
-		switch (iNum)
-		{
-			case 1:
-			{
-				hGM.SetNum("ban", iBan);
-				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-				LogToFileEx(sg_log, "[GMB] Сonsole Ban: %s, %s", sTeamID, sTime);
-			}
-			case 2:
-			{
-				hGM.SetNum("vote", iBan);
-				FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
-				LogToFileEx(sg_log, "[GMB] Сonsole Ban Vote: %s, %s", sTeamID, sTime);
-			}
-		}
+		hGM.SetNum(sNum, iBan);
 	}
+	
+	FormatTime(sTime, sizeof(sTime)-1, "%Y-%m-%d %H:%M:%S", iBan);
+	LogToFileEx(sg_log, "[GMB] Сonsole %s: %s, %s", sNum, sTeamID, sTime);
 	
 	hGM.Rewind();
 	hGM.ExportToFile(sg_file);
