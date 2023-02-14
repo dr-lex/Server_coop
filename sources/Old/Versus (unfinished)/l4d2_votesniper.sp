@@ -205,6 +205,24 @@ stock int VoteSniper(int client, int iNum)
 
 stock int Handle_VoteMenu(Menu menu, MenuAction action, int param1, int param2)
 {
+	if (param1 > 0)
+	{
+		char info[64];
+		GetMenuItem(menu, param2, info, sizeof(info));
+		if (strcmp(info,"1") == 0)
+		{
+			PrintToChatAll("\x04[Vote]\x03%N \x01 No!", param1);
+		}
+		else if (strcmp(info,"1") == 0)
+		{
+			PrintToChatAll("\x04[Vote]\x03%N \x01 Yes scout!", param1);
+		}
+		else if (strcmp(info,"2") == 0)
+		{
+			PrintToChatAll("\x04[Vote]\x03%N \x01 Yes awp!", param1);
+		}
+	}
+	
 	switch (action)
 	{
 		case MenuAction_End:
