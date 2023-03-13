@@ -29,36 +29,45 @@
 
 #pragma semicolon 1
 #include <sourcemod>
-#include <adminmenu>
 #include <sdktools>
-#include <sdkhooks>
-
+#include <adminmenu>
+#include <localizer>
 #tryinclude <l4d2_changelevel>
 
 TopMenu hTopMenuHandle;
 
 char sg_file[160];
-char sBuffer[128];
+char sg_file2[160];
 char sMode[32];
-char sNum[64];
-char sNumFileTxt[128];
+char sBuffer[128];
+char sBuffer2[128];
 char sName[256];
-int iList;
+char sNum[64];
+char sDisplayTitle[128];
+int iNum;
+int iText;
+
+Localizer loc;
 
 public Plugin myinfo = 
 {
 	name = "[l4d2] List of missions",
 	author = "dr.lex (Exclusive Coop-17)",
 	description = "Automatic reading of all available campaigns",
-	version = "1.2.1",
+	version = "1.3",
 	url = ""
 };
 
 public void OnPluginStart()
 {
-	RegAdminCmd("sm_amaps", CMD_AMaps, ADMFLAG_UNBAN, "");
-	RegAdminCmd("sm_aupdate", CMD_AUpdate, ADMFLAG_UNBAN, "");
+	loc = new Localizer(LC_INSTALL_MODE_FULLCACHE); 
+	
+	RegAdminCmd("sm_map_list", CMD_Maps, ADMFLAG_UNBAN, "");
+	RegAdminCmd("sm_map_list_update", CMD_MLU, ADMFLAG_UNBAN, "");
 	RegConsoleCmd("sm_votedlc", CMD_VoteDlc, "", 0);
+	
+	BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/buffer.txt");
+	BuildPath(Path_SM, sg_file2, sizeof(sg_file2)-1, "data/maps_list_missions.txt");
 	
 	TopMenu hTop_Menu;
 	if (LibraryExists("adminmenu") && ((hTop_Menu = GetAdminTopMenu()) != null))
@@ -89,7 +98,7 @@ public void OnAdminMenuReady(Handle topmenu)
 	TopMenuObject ServerCmdCategory = hTopMenuHandle.FindCategory(ADMINMENU_SERVERCOMMANDS);
 	if (ServerCmdCategory != INVALID_TOPMENUOBJECT)
 	{
-		hTopMenuHandle.AddItem("sm_amaps", AdminMenu_Maps, ServerCmdCategory, "sm_amaps", ADMFLAG_UNBAN);
+		hTopMenuHandle.AddItem("sm_map_list", AdminMenu_Maps, ServerCmdCategory, "sm_map_list", ADMFLAG_UNBAN);
 	}
 }
 
@@ -97,545 +106,58 @@ public void AdminMenu_Maps(TopMenu Top_Menu, TopMenuAction action, TopMenuObject
 {
 	switch (action)
 	{
-		case TopMenuAction_DisplayOption: Format(Buffer, maxlength, "List of Companies (Maps)");
-		case TopMenuAction_SelectOption: CMD_AMaps(param, 0);
+		case TopMenuAction_DisplayOption: Format(Buffer, maxlength, "List of Missions");
+		case TopMenuAction_SelectOption: CMD_Maps(param, 0);
 	}
 }
 
-public Action CMD_AMaps(int client, int args)
-{
-	if (client)
-	{
-		ConVar g_Mode = FindConVar("mp_gamemode");
-		GetConVarString(g_Mode, sMode, sizeof(sMode));
-		
-		iList = 0;
-		
-		KeyValues hGM = new KeyValues("missions");
-		Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/basic_dlc.txt");
-		hGM.ImportFromFile(sg_file);
-		if (hGM.JumpToKey("Total"))
-		{
-			iList = hGM.GetNum("List", 0);
-			hGM.GoBack();
-		}
-		delete hGM;
-		
-		if (1 <= iList)
-		{
-			Menu menu = new Menu(AMapsHandler);
-			menu.SetTitle("List of Companies (Maps)");
-			menu.AddItem("1", "Campaigns");
-			menu.AddItem("2", "DLC Campaigns");
-			menu.ExitBackButton = true;
-			menu.Display(client, 30);
-		}
-		else
-		{
-			ACampaign(client);
-		}
-	}
-	return Plugin_Handled;
-}
-
-public Action CMD_AUpdate(int client, int args)
-{
-	HxDelMissionsList();
-	HxUpdateMissionsList();
-	return Plugin_Handled;
-}
-
-public Action CMD_VoteDlc(int client, int args)
+public Action CMD_MLU(int client, int args)
 {
 	ConVar g_Mode = FindConVar("mp_gamemode");
 	GetConVarString(g_Mode, sMode, sizeof(sMode));
 	
-	iList = 0;
-	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/basic_dlc.txt");
-	hGM.ImportFromFile(sg_file);
-	if (hGM.JumpToKey("Total"))
-	{
-		iList = hGM.GetNum("List", 0);
-		hGM.GoBack();
-	}
-	
-	if (1 <= iList)
-	{
-		Menu menu = new Menu(MenuHandlerDlcCampaignVote);
-		menu.SetTitle("List of DLC:Companies (Vote)");
-		
-		if (hGM.JumpToKey("DLC"))
-		{
-			int i = 1;
-			while (i <= iList)
-			{
-				Format(sNum, sizeof(sNum), "%i", i);
-				char sFileDlc[256];
-				hGM.GetString(sNum, sFileDlc, sizeof(sFileDlc)-1, "");
-				
-				MissionsMenuDLC(menu, sFileDlc);
-				i += 1;
-			}
-			hGM.GoBack();
-		}
-		
-		menu.ExitButton = false;
-		menu.Display(client, 30);
-	}
-	delete hGM;
+	HxDelMissionsList(sg_file);
+	HxDelMissionsList(sg_file2);
+	HxUpdateMissionsList();
 	return Plugin_Handled;
 }
 
-public int AMapsHandler(Menu menu, MenuAction action, int param1, int param2)
+stock void HxDelMissionsList(char [] sFile)
 {
-	switch (action)
+	if (FileExists(sFile))
 	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			if (strcmp(info, "1") == 0)
-			{
-				ACampaign(param1);
-			}
-			if (strcmp(info, "2") == 0)
-			{
-				ADlcCampaign(param1);
-			}		
-		}
+		DeleteFile(sFile);
 	}
-	return 0;
 }
 
-public Action ACampaign(int client)
+stock void HxDeletAll(char [] sFile)
 {
-	Menu menu = new Menu(ACampaignHandler);
-	menu.SetTitle("List of Companies (Maps)");
-	
-	MissionsMenu(menu, 1);
-	MissionsMenu(menu, 6);
-	MissionsMenu(menu, 2);
-	MissionsMenu(menu, 3);
-	MissionsMenu(menu, 4);
-	MissionsMenu(menu, 5);
-	MissionsMenu(menu, 7);
-	MissionsMenu(menu, 8);
-	MissionsMenu(menu, 9);
-	MissionsMenu(menu, 10);
-	MissionsMenu(menu, 11);
-	MissionsMenu(menu, 12);
-	MissionsMenu(menu, 13);
-	MissionsMenu(menu, 14);
-	
-	if (1 <= iList)
+	File hFile = OpenFile(sFile, "w");
+	if (hFile != null)
 	{
-		menu.ExitBackButton = true;
+		delete hFile;
 	}
-	menu.ExitButton = false;
-	menu.Display(client, 30);
-	return Plugin_Handled;
-}
-
-stock void MissionsMenu(Menu menu, int campaign)
-{
-	sName[0] = '\0';
-	switch (campaign)
-	{
-		case 1: sName = "Dead Center";
-		case 2: sName = "Dark Carnival";
-		case 3: sName = "Swamp Fever";
-		case 4: sName = "Hard Rain";
-		case 5: sName = "The Parish";
-		case 6: sName = "The Passing";
-		case 7: sName = "The Sacrifice";
-		case 8: sName = "No Mercy";
-		case 9: sName = "Crash Course";
-		case 10: sName = "Death Toll";
-		case 11: sName = "Dead Airl";
-		case 12: sName = "Blood Harvest";
-		case 13: sName = "Cold Stream";
-		case 14: sName = "The Last Stand";
-	}
-	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/campaign%i.txt", campaign);
-	hGM.ImportFromFile(sg_file);
-	if (hGM.JumpToKey("modes"))
-	{
-		if (hGM.JumpToKey(sMode))
-		{
-			Format(sNum, sizeof(sNum), "%i", campaign);
-			menu.AddItem(sNum, sName);
-			hGM.GoBack();
-		}
-		hGM.GoBack();
-	}
-	delete hGM;
-}
-
-public int ACampaignHandler(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			int iNum = StringToInt(info);
-			ACampaignNum(param1, iNum);
-		}
-		case MenuAction_Cancel:
-		{
-			if (param2 == MenuCancel_ExitBack)
-			{
-				CMD_AMaps(param1, 0);
-			}
-		}
-	}
-	return 0;
-}
-
-stock void ACampaignNum(int client, int campaigns)
-{
-	sName[0] = '\0';
-	switch (campaigns)
-	{
-		case 1: sName = "Dead Center";
-		case 2: sName = "Dark Carnival";
-		case 3: sName = "Swamp Fever";
-		case 4: sName = "Hard Rain";
-		case 5: sName = "The Parish";
-		case 6: sName = "The Passing";
-		case 7: sName = "The Sacrifice";
-		case 8: sName = "No Mercy";
-		case 9: sName = "Crash Course";
-		case 10: sName = "Death Toll";
-		case 11: sName = "Dead Airl";
-		case 12: sName = "Blood Harvest";
-		case 13: sName = "Cold Stream";
-		case 14: sName = "The Last Stand";
-	}
-	
-	Format(sNumFileTxt, 40-1, "campaign%i.txt", campaigns);
-
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", sNumFileTxt);
-	hGM.ImportFromFile(sg_file);
-	
-	Menu menu = new Menu(ACampaignNumHandler);
-	menu.SetTitle("%s [Maps]", sName);
-	
-	if (hGM.JumpToKey("modes"))
-	{
-		if (hGM.JumpToKey(sMode))
-		{
-			int i = 1;
-			int l = 1;
-			while (i <= l)
-			{
-				Format(sNum, sizeof(sNum), "%i", i);
-				if (hGM.JumpToKey(sNum))
-				{
-					l += 1;
-					char sMapText[256];
-					hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
-					
-					Format(sBuffer, sizeof(sBuffer)-1, "Map #%i: %s", i, sMapText);
-					menu.AddItem(sNum, sBuffer);
-					hGM.GoBack();
-				}
-				i += 1;
-			}
-		}
-	}
-	delete hGM;
-	
-	menu.ExitBackButton = true;
-	menu.ExitButton = false;
-	menu.Display(client, 30);
-}
-
-public int ACampaignNumHandler(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			int iNum = StringToInt(info);
-			CampaignNumMap(param1, iNum, 0);
-		}
-		case MenuAction_Cancel:
-		{
-			if (param2 == MenuCancel_ExitBack)
-			{
-				ACampaign(param1);
-			}
-		}
-	}
-	return 0;
-}
-
-stock void CampaignNumMap(int client, int iMaps, int iVote)
-{	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", sNumFileTxt);
-	hGM.ImportFromFile(sg_file);
-	if (hGM.JumpToKey("modes"))
-	{
-		if (hGM.JumpToKey(sMode))
-		{
-			Format(sNum, sizeof(sNum), "%i", iMaps);
-			if (hGM.JumpToKey(sNum))
-			{
-				char sMapText[256];
-				hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
-				
-				if (iVote)
-				{
-					FakeClientCommand(client, "callvote changelevel %s", sMapText);
-				}
-				else
-				{
-				#if defined _l4d2_changelevel_included
-					L4D2_ChangeLevel(sMapText);
-				#else
-					ServerCommand("changelevel %s", sMapText);
-				#endif
-				}
-			}
-		}
-	}
-	delete hGM;
-}
-
-public Action ADlcCampaign(int client)
-{
-	iList = 0;
-	
-	Menu menu = new Menu(ADlcCampaignHandler);
-	menu.SetTitle("List of DLC:Companies (Maps)");
-	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/basic_dlc.txt");
-	hGM.ImportFromFile(sg_file);
-	if (hGM.JumpToKey("Total"))
-	{
-		iList = hGM.GetNum("List", 0);
-		hGM.GoBack();
-	}
-	if (hGM.JumpToKey("DLC"))
-	{
-		int i = 1;
-		while (i <= iList)
-		{
-			Format(sNum, sizeof(sNum), "%i", i);
-			char sFileDlc[256];
-			hGM.GetString(sNum, sFileDlc, sizeof(sFileDlc)-1, "");
-			
-			MissionsMenuDLC(menu, sFileDlc);
-			i += 1;
-		}
-		hGM.GoBack();
-	}
-	delete hGM;
-	
-	
-	menu.ExitBackButton = true;
-	menu.ExitButton = false;
-	menu.Display(client, 30);
-	return Plugin_Handled;
-}
-
-stock void MissionsMenuDLC(Menu menu, char[] campaign)
-{	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", campaign);
-	hGM.ImportFromFile(sg_file);
-	
-	char sDisplayTitle[256];
-	hGM.GetString("DisplayTitle", sDisplayTitle, sizeof(sDisplayTitle)-1, "");
-	
-	if (hGM.JumpToKey("modes"))
-	{
-		if (hGM.JumpToKey(sMode))
-		{
-			Format(sNum, sizeof(sNum), "%s", campaign);
-			menu.AddItem(sNum, sDisplayTitle);
-			hGM.GoBack();
-		}
-		hGM.GoBack();
-	}
-	delete hGM;
-}
-
-public int ADlcCampaignHandler(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			ADlcCampaignNum(param1, info);
-		}
-		case MenuAction_Cancel:
-		{
-			if (param2 == MenuCancel_ExitBack)
-			{
-				CMD_AMaps(param1, 0);
-			}
-		}
-	}
-	return 0;
-}
-
-stock void ADlcCampaignNum(int client, char[] campaigns)
-{
-	Format(sNumFileTxt, 40-1, "%s", campaigns);
-	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", sNumFileTxt);
-	hGM.ImportFromFile(sg_file);
-	
-	char sDisplayTitle[256];
-	hGM.GetString("DisplayTitle", sDisplayTitle, sizeof(sDisplayTitle)-1, "");
-	
-	Menu menu = new Menu(ADlcCampaignNumHandler);
-	menu.SetTitle("%s [Maps]", sDisplayTitle);
-	
-	if (hGM.JumpToKey("modes"))
-	{
-		if (hGM.JumpToKey(sMode))
-		{
-			int i = 1;
-			int l = 1;
-			while (i <= l)
-			{
-				Format(sNum, sizeof(sNum), "%i", i);
-				if (hGM.JumpToKey(sNum))
-				{
-					l += 1;
-					char sMapText[256];
-					hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
-					char sDisplayNameText[256];
-					hGM.GetString("DisplayName", sDisplayNameText, sizeof(sDisplayNameText)-1, "");
-					
-					Format(sBuffer, sizeof(sBuffer)-1, "Map #%i: %s [%s]", i, sDisplayNameText, sMapText);
-					menu.AddItem(sNum, sBuffer);
-					hGM.GoBack();
-				}
-				i += 1;
-			}
-		}
-	}
-	delete hGM;
-	
-	menu.ExitBackButton = true;
-	menu.ExitButton = false;
-	menu.Display(client, 30);
-}
-
-public int ADlcCampaignNumHandler(Menu menu, MenuAction action, int param1, int param2)
-{
-	switch (action)
-	{
-		case MenuAction_End:
-		{
-			delete menu;
-		}
-		case MenuAction_Select:
-		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			int iNum = StringToInt(info);
-			CampaignNumMap(param1, iNum, 0);
-		}
-		case MenuAction_Cancel:
-		{
-			if (param2 == MenuCancel_ExitBack)
-			{
-				ADlcCampaign(param1);
-			}
-		}
-	}
-	return 0;
-}
-
-//==========================================
-stock void HxDelMissionsList()
-{
-	DirectoryListing dirList = OpenDirectory("addons/sourcemod/data/missions", true, NULL_STRING);
-	if (dirList != null)
-	{
-		FileType type;
-		while (dirList.GetNext(sBuffer, sizeof(sBuffer), type))
-		{
-			if (type == FileType_File)
-			{
-				Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", sBuffer);
-				DeleteFile(sg_file, true, NULL_STRING);
-			}
-		}
-	}
-	delete dirList;
 }
 
 stock void HxUpdateMissionsList()
 {
 	char dirName[256];
-	Format(dirName, sizeof(dirName), "addons/sourcemod/data/missions");
+	Format(dirName, sizeof(dirName), "addons/sourcemod/data");
 	CreateDirectory(dirName, 511);
 	
 	DirectoryListing dirList = OpenDirectory("missions", true, NULL_STRING);
 	if (dirList != null)
 	{
-		BuildPath(Path_SM, sg_file, sizeof(sg_file)-1, "data/missions/basic_dlc.txt");
-		
-		int i = 0;
+		iNum = 0;
 		FileType type;
 		
-		KeyValues hGM = new KeyValues("missions");
-		hGM.ImportFromFile(sg_file);
-		hGM.JumpToKey("DLC", true);
-		char sPath[128];
 		while (dirList.GetNext(sBuffer, sizeof(sBuffer), type))
 		{
 			if (type == FileType_File)
 			{
-				if (StrEqual(sBuffer, "campaign1.txt") || StrEqual(sBuffer, "campaign2.txt") || StrEqual(sBuffer, "campaign3.txt") || StrEqual(sBuffer, "campaign4.txt") || StrEqual(sBuffer, "campaign5.txt") || StrEqual(sBuffer, "campaign6.txt") || StrEqual(sBuffer, "campaign7.txt") || StrEqual(sBuffer, "campaign8.txt") || StrEqual(sBuffer, "campaign9.txt") || StrEqual(sBuffer, "campaign10.txt") || StrEqual(sBuffer, "campaign11.txt") || StrEqual(sBuffer, "campaign12.txt") || StrEqual(sBuffer, "campaign13.txt") || StrEqual(sBuffer, "campaign14.txt") || StrEqual(sBuffer, "credits.txt") || StrEqual(sBuffer, "holdoutchallenge.txt") || StrEqual(sBuffer, "holdouttraining.txt") || StrEqual(sBuffer, "parishdash.txt") || StrEqual(sBuffer, "shootzones.txt") || StrEqual(sBuffer, "jtsm.txt"))
-				{
-					//continue;
-				}
-				else
-				{
-					i += 1;
-					Format(sPath, sizeof(sPath), "%i", i);
-					hGM.SetString(sPath, sBuffer);
-				}
-				
-				char sPath2[512];
-				Format(sPath2, sizeof(sPath2), "missions/%s", sBuffer);
-				File f = OpenFile(sPath2, "rt", true, NULL_STRING);
+				char sPath[128];
+				Format(sPath, sizeof(sPath), "missions/%s", sBuffer);
+				File f = OpenFile(sPath, "rt", true, NULL_STRING);
 				if (f)
 				{
 					char sText[256];
@@ -643,28 +165,189 @@ stock void HxUpdateMissionsList()
 					{
 						TrimString(sText);
 						char sPath3[256];
-						Format(sPath3, sizeof(sPath3), "addons/sourcemod/data/missions/%s", sBuffer);						
+						Format(sPath3, sizeof(sPath3), "addons/sourcemod/data/buffer.txt");
 						File hFile = OpenFile(sPath3, "at");
 						WriteFileLine(hFile, sText);
 						delete hFile;
 					}
 					delete f;
 				}
+				
+				if (StrContains(sBuffer, "campaign", true) != -1 || StrEqual(sBuffer, "credits.txt") || StrEqual(sBuffer, "holdoutchallenge.txt") || StrEqual(sBuffer, "holdouttraining.txt") || StrEqual(sBuffer, "parishdash.txt") || StrEqual(sBuffer, "shootzones.txt") || StrEqual(sBuffer, "jtsm.txt"))
+				{
+					if (StrContains(sBuffer, "campaign", true) != -1)
+					{
+						SaveBaseDate(0, sBuffer);
+					}
+				}
+				else
+				{
+					SaveBaseDate(1, sBuffer);
+				}
+				HxDeletAll(sg_file);
 			}
 		}
-		hGM.GoBack();
-		
-		hGM.JumpToKey("Total", true);
-		hGM.SetNum("List", i);
-		
-		hGM.Rewind();
-		hGM.ExportToFile(sg_file);
-		delete hGM;
 	}
 	delete dirList;
+	
+	HxDelMissionsList(sg_file);
 }
 
-public int MenuHandlerDlcCampaignVote(Menu menu, MenuAction action, int param1, int param2)
+stock void SaveBaseDate(int option, char[] sBuf)
+{	
+	KeyValues hGM = new KeyValues("missions");
+	hGM.ImportFromFile(sg_file);
+	
+	char sMapText[256];
+	char sMapName[256];
+	
+	hGM.GetString("DisplayTitle", sDisplayTitle, sizeof(sDisplayTitle)-1, "");
+	if (StrEqual(sDisplayTitle, ""))
+	{
+		Format(sDisplayTitle, sizeof(sDisplayTitle), "Unknown");
+	}
+	
+	hGM.GetString("Name", sName, sizeof(sName)-1, "");
+	if (StrEqual(sName, ""))
+	{
+		Format(sName, sizeof(sName), "Unknown");
+	}
+	
+	if (hGM.JumpToKey("modes"))
+	{
+		if (hGM.JumpToKey(sMode))
+		{			
+			KeyValues hGM2 = new KeyValues("missions");
+			hGM2.ImportFromFile(sg_file2);
+			
+			hGM2.JumpToKey("List", true);
+			switch (option)
+			{
+				case 0:
+				{
+					hGM2.JumpToKey("Valve", true);
+					Format(sNum, sizeof(sNum), "%s", sBuf[8]);
+					ReplaceString(sNum, sizeof(sNum), ".txt", "");
+				}
+				case 1:
+				{
+					hGM2.JumpToKey("DLC", true);
+					iNum += 1;
+					Format(sNum, sizeof(sNum), "%i", iNum);
+				}
+			}
+			
+			int iL = hGM2.GetNum("Total", 0);
+			iL += 1;
+			hGM2.SetNum("Total", iL);
+			
+			hGM2.SetString(sNum, sDisplayTitle);
+			
+			hGM2.Rewind();
+			hGM2.JumpToKey("Missions", true);
+			hGM2.JumpToKey(sDisplayTitle, true);
+			hGM2.SetString("Name", sName);
+			
+			int i = 1;
+			int l = 1;
+			while (i <= l)
+			{
+				Format(sNum, sizeof(sNum), "%i", i);
+				if (hGM.JumpToKey(sNum))
+				{
+					l += 1;
+					hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
+					if (StrEqual(sMapText, ""))
+					{
+						Format(sMapText, sizeof(sMapText), "Unknown");
+					}
+					
+					hGM.GetString("DisplayName", sMapName, sizeof(sMapName)-1, "");
+					if (StrEqual(sMapName, ""))
+					{
+						Format(sMapName, sizeof(sMapName), "Unknown");
+					}
+					
+					hGM2.JumpToKey(sNum, true);
+					hGM2.SetString("Map", sMapText);
+					hGM2.SetString("DisplayName", sMapName);
+					hGM2.GoBack();
+					
+					hGM.GoBack();
+				}
+				i += 1;
+			}
+			
+			hGM2.Rewind();
+			hGM2.ExportToFile(sg_file2);
+			delete hGM2;
+		}
+	}
+	delete hGM;
+}
+
+//=========================================================
+//=========================================================
+//=========================================================
+
+public Action CMD_Maps(int client, int args)
+{
+	if (client)
+	{
+		KeyValues hGM = new KeyValues("missions");
+		hGM.ImportFromFile(sg_file2);
+		if (hGM.JumpToKey("List"))
+		{
+			if (hGM.JumpToKey("DLC"))
+			{
+				iNum = 1;
+			}
+			else
+			{
+				if (hGM.JumpToKey("Valve"))
+				{
+					iNum = 0;
+				}
+				else
+				{
+					iNum = 2;
+				}
+			}
+		}
+		else
+		{
+			iNum = 2;
+		}
+		
+		switch (iNum)
+		{
+			case 0: MissionsMenuList(client, 0);
+			case 1: MissionsMenu(client);
+			case 2:
+			{
+				CMD_MLU(client, 0);
+				CMD_Maps(client, 0);
+			}
+		}
+	}
+	return Plugin_Handled;
+}
+
+public Action MissionsMenu(int client)
+{
+	if (client)
+	{
+		Menu menu = new Menu(MissionsMenuHandler);
+		menu.SetTitle("List of Missions");
+		menu.AddItem("1", "Missions (Valve)");
+		menu.AddItem("2", "DLC: Missions (Workshop)");
+		menu.ExitButton = false;
+		menu.Display(client, 30);
+	}
+	return Plugin_Handled;
+}
+
+public int MissionsMenuHandler(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
 	{
@@ -674,40 +357,143 @@ public int MenuHandlerDlcCampaignVote(Menu menu, MenuAction action, int param1, 
 		}
 		case MenuAction_Select:
 		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			CampaignNumDlcVote(param1, info);
+			char sInfo[16];
+			menu.GetItem(param2, sInfo, sizeof(sInfo));
+			if (strcmp(sInfo, "1") == 0)
+			{
+				MissionsMenuList(param1, 0);
+			}
+			if (strcmp(sInfo, "2") == 0)
+			{
+				MissionsMenuList(param1, 1);
+			}		
+		}
+		case MenuAction_Cancel:
+		{
+			if (param2 == MenuCancel_ExitBack && hTopMenuHandle)
+			{
+				hTopMenuHandle.Display(param1, TopMenuPosition_LastCategory);
+			}
 		}
 	}
 	return 0;
 }
 
-stock void CampaignNumDlcVote(int client, char[] campaigns)
+public Action MissionsMenuList(int client, iKey)
 {
-	Format(sNumFileTxt, 40-1, "%s", campaigns);
-	
-	KeyValues hGM = new KeyValues("missions");
-	Format(sg_file, sizeof(sg_file), "addons/sourcemod/data/missions/%s", sNumFileTxt);
-	hGM.ImportFromFile(sg_file);
-	
-	if (StrEqual(sMode, "coop") || StrEqual(sMode, "versus"))
+	if (client)
 	{
 		sName[0] = '\0';
-		hGM.GetString("Name", sName, sizeof(sName)-1, "");
-		FakeClientCommand(client, "callvote ChangeMission %s", sName);
-	}
-	else
-	{
-		char sDisplayTitle[256];
-		hGM.GetString("DisplayTitle", sDisplayTitle, sizeof(sDisplayTitle)-1, "");
-	
-		Menu menu = new Menu(MenuHandlerDlcVoteMode);
-		menu.SetTitle("%s [Maps]", sDisplayTitle);
-		
-		if (hGM.JumpToKey("modes"))
+		switch (iKey)
 		{
-			if (hGM.JumpToKey(sMode))
+			case 0: sName = "Valve";
+			case 1: sName = "DLC";
+		}
+		
+		iText = iKey;
+		
+		KeyValues hGM = new KeyValues("missions");
+		hGM.ImportFromFile(sg_file2);
+		if (hGM.JumpToKey("List"))
+		{
+			if (hGM.JumpToKey(sName))
 			{
+				int iList = hGM.GetNum("Total", 0);
+				
+				Menu menu = new Menu(MissionsMenuListHandler);
+				
+				Format(sBuffer, sizeof(sBuffer)-1, "List of Missions (%s)", sName);
+				menu.SetTitle(sBuffer);
+				
+				char sT[128];
+				
+				int i = 1;
+				while (i <= iList)
+				{
+					Format(sNum, sizeof(sNum), "%i", i);
+					hGM.GetString(sNum, sT, sizeof(sT)-1, "");
+					switch (iText)
+					{
+						case 0: loc.PhraseTranslateToLang(sT, sBuffer, sizeof(sBuffer), client, _, _, sT);
+						case 1: Format(sBuffer, sizeof(sBuffer)-1, "%s", sT);
+					}
+					
+					menu.AddItem(sNum, sBuffer);
+					
+					i += 1;
+				}
+				
+				if (iNum == 1)
+				{
+					menu.ExitBackButton = true;
+				}
+				menu.ExitButton = false;
+				menu.Display(client, 30);
+			}
+		}
+		delete hGM;
+	}
+	return Plugin_Handled;
+}
+
+public int MissionsMenuListHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch (action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			char sInfo[64];
+			menu.GetItem(param2, sInfo, sizeof(sInfo));
+			MissionsMenuListNum(param1, sInfo);
+		}
+		case MenuAction_Cancel:
+		{
+			if (param2 == MenuCancel_ExitBack)
+			{
+				CMD_Maps(param1, 0);
+			}
+		}
+	}
+	return 0;
+}
+
+stock void MissionsMenuListNum(int client, char[] iq_campaigns)
+{
+	KeyValues hGM = new KeyValues("missions");
+	hGM.ImportFromFile(sg_file2);
+	if (hGM.JumpToKey("List"))
+	{
+		if (hGM.JumpToKey(sName))
+		{
+			hGM.GetString(iq_campaigns, sDisplayTitle, sizeof(sDisplayTitle)-1, "");
+			hGM.Rewind();
+		}
+		hGM.Rewind();
+		
+		Menu menu = new Menu(MissionsMenuListNumHandler);
+		switch (iText)
+		{
+			case 0:
+			{
+				loc.PhraseTranslateToLang(sDisplayTitle, sBuffer2, sizeof(sBuffer2), client, _, _, sDisplayTitle);
+				Format(sBuffer, sizeof(sBuffer)-1, "%s [Maps]", sBuffer2);
+			}
+			case 1: Format(sBuffer, sizeof(sBuffer)-1, "%s [Maps]", sDisplayTitle);
+		}
+
+		menu.SetTitle(sBuffer);
+		
+		if (hGM.JumpToKey("Missions"))
+		{
+			if (hGM.JumpToKey(sDisplayTitle))
+			{
+				char sMapText[128];
+				char sDisplayNameText[128];
+				
 				int i = 1;
 				int l = 1;
 				while (i <= l)
@@ -716,12 +502,20 @@ stock void CampaignNumDlcVote(int client, char[] campaigns)
 					if (hGM.JumpToKey(sNum))
 					{
 						l += 1;
-						char sMapText[256];
+						
 						hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
-						char sDisplayNameText[256];
 						hGM.GetString("DisplayName", sDisplayNameText, sizeof(sDisplayNameText)-1, "");
 						
-						Format(sBuffer, sizeof(sBuffer)-1, "Map #%i: %s [%s]", i, sDisplayNameText, sMapText);
+						switch (iText)
+						{
+							case 0:
+							{
+								loc.PhraseTranslateToLang(sDisplayNameText, sBuffer2, sizeof(sBuffer2), client, _, _, sDisplayNameText);
+								Format(sBuffer, sizeof(sBuffer)-1, "Map %s [%s]", sBuffer2, sMapText);
+							}
+							case 1: Format(sBuffer, sizeof(sBuffer)-1, "Map %s [%s]", sDisplayNameText, sMapText);
+						}
+						
 						menu.AddItem(sNum, sBuffer);
 						hGM.GoBack();
 					}
@@ -737,6 +531,187 @@ stock void CampaignNumDlcVote(int client, char[] campaigns)
 	delete hGM;
 }
 
+public int MissionsMenuListNumHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch (action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			char sInfo[32];
+			menu.GetItem(param2, sInfo, sizeof(sInfo));
+			int iN = StringToInt(sInfo);
+			CampaignNumMap(param1, iN, 0);
+		}
+		case MenuAction_Cancel:
+		{
+			if (param2 == MenuCancel_ExitBack)
+			{
+				MissionsMenuList(param1, iText);
+			}
+		}
+	}
+	return 0;
+}
+
+stock void CampaignNumMap(int client, int iMaps, int iVote)
+{
+	if (client)
+	{
+		KeyValues hGM = new KeyValues("missions");
+		hGM.ImportFromFile(sg_file2);
+		if (hGM.JumpToKey("Missions"))
+		{
+			if (hGM.JumpToKey(sDisplayTitle))
+			{
+				Format(sNum, sizeof(sNum), "%i", iMaps);
+				if (hGM.JumpToKey(sNum))
+				{
+					hGM.GetString("Map", sBuffer, sizeof(sBuffer)-1, "");
+					
+					switch (iVote)
+					{
+						case 0:
+						{
+						#if defined _l4d2_changelevel_included
+							L4D2_ChangeLevel(sBuffer);
+						#else
+							ServerCommand("changelevel %s", sBuffer);
+						#endif
+						}
+						case 1: FakeClientCommand(client, "callvote changelevel %s", sBuffer);
+					}
+				}
+			}
+		}
+		delete hGM;
+	}
+}
+
+//====================================
+
+public Action CMD_VoteDlc(int client, int args)
+{
+	if (client)
+	{
+		ConVar g_Mode = FindConVar("mp_gamemode");
+		GetConVarString(g_Mode, sMode, sizeof(sMode));
+	
+		KeyValues hGM = new KeyValues("missions");
+		hGM.ImportFromFile(sg_file2);
+		if (hGM.JumpToKey("List"))
+		{
+			if (hGM.JumpToKey("DLC"))
+			{
+				int iList = hGM.GetNum("Total", 0);
+				if (iList >= 1)
+				{
+					Menu menu = new Menu(MenuHandlerDlcCampaignVote);
+					menu.SetTitle("List of DLC:Companies (Vote)");
+			
+					int i = 1;
+					while (i <= iList)
+					{
+						Format(sNum, sizeof(sNum), "%i", i);
+						char sNameDlc[128];
+						hGM.GetString(sNum, sNameDlc, sizeof(sNameDlc)-1, "");
+						
+						menu.AddItem(sNum, sNameDlc);
+						i += 1;
+					}
+					
+					menu.ExitButton = false;
+					menu.Display(client, 30);
+				}
+			}
+		}
+		delete hGM;
+	}
+	return Plugin_Handled;
+}
+
+public int MenuHandlerDlcCampaignVote(Menu menu, MenuAction action, int param1, int param2)
+{
+	switch (action)
+	{
+		case MenuAction_End:
+		{
+			delete menu;
+		}
+		case MenuAction_Select:
+		{
+			char sInfo[32];
+			menu.GetItem(param2, sInfo, sizeof(sInfo));
+			CampaignNumDlcVote(param1, sInfo);
+		}
+	}
+	return 0;
+}
+
+stock void CampaignNumDlcVote(int client, char[] iq_campaigns)
+{
+	KeyValues hGM = new KeyValues("missions");
+	hGM.ImportFromFile(sg_file2);
+	if (hGM.JumpToKey("List"))
+	{
+		char sNameDlc[128];
+		if (hGM.JumpToKey("DLC"))
+		{
+			hGM.GetString(iq_campaigns, sNameDlc, sizeof(sNameDlc)-1, "");
+			hGM.Rewind();
+		}
+		hGM.Rewind();
+		
+		if (hGM.JumpToKey("Missions"))
+		{
+			if (hGM.JumpToKey(sNameDlc))
+			{
+				if (StrEqual(sMode, "coop") || StrEqual(sMode, "versus"))
+				{
+					char sNameKey[128];
+					hGM.GetString("Name", sNameKey, sizeof(sNameKey)-1, "");
+					FakeClientCommand(client, "callvote ChangeMission %s", sNameKey);
+				}
+				else
+				{
+					char sMapText[128];
+					char sDisplayNameText[128];
+					
+					Menu menu = new Menu(MenuHandlerDlcVoteMode);
+					menu.SetTitle("%s [Maps]", sNameDlc);
+					
+					int i = 1;
+					int l = 1;
+					while (i <= l)
+					{
+						Format(sNum, sizeof(sNum), "%i", i);
+						if (hGM.JumpToKey(sNum))
+						{
+							l += 1;
+							
+							hGM.GetString("Map", sMapText, sizeof(sMapText)-1, "");
+							hGM.GetString("DisplayName", sDisplayNameText, sizeof(sDisplayNameText)-1, "");
+							
+							Format(sBuffer, sizeof(sBuffer)-1, "Map #%i: %s [%s]", i, sDisplayNameText, sMapText);
+							menu.AddItem(sNum, sBuffer);
+							hGM.GoBack();
+						}
+						i += 1;
+					}
+					
+					menu.ExitBackButton = true;
+					menu.ExitButton = false;
+					menu.Display(client, 30);
+				}
+			}
+		}
+	}
+	delete hGM;
+}
+
 stock int MenuHandlerDlcVoteMode(Menu menu, MenuAction action, int param1, int param2)
 {
 	switch (action)
@@ -747,10 +722,10 @@ stock int MenuHandlerDlcVoteMode(Menu menu, MenuAction action, int param1, int p
 		}
 		case MenuAction_Select:
 		{
-			char info[32];
-			menu.GetItem(param2, info, sizeof(info));
-			int iNum = StringToInt(info);
-			CampaignNumMap(param1, iNum, 1);
+			char sInfo[32];
+			menu.GetItem(param2, sInfo, sizeof(sInfo));
+			int iN = StringToInt(sInfo);
+			CampaignNumMap(param1, iN, 1);
 		}
 		case MenuAction_Cancel:
 		{
